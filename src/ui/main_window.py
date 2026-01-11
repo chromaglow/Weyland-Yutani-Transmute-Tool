@@ -14,6 +14,7 @@ from core.mesh_analyzer import MeshAnalyzer
 from core.mesh_repairer import MeshRepairer
 from core.step_converter import StepConverter
 from core.validator import MeshValidator
+from ui.debug_window import DebugWindow, DebugExceptionHandler
 
 
 class TransmuteApp:
@@ -21,10 +22,27 @@ class TransmuteApp:
     Main application window for STL repair and STEP conversion
     """
     
+    # DOS Theme Colors
+    DOS_BG = "#000000"  # Black background
+    DOS_FG = "#00FF00"  # Bright green text
+    DOS_FG_DIM = "#00AA00"  # Dim green
+    DOS_HIGHLIGHT = "#00FF00"  # Bright green highlight
+    DOS_FONT = ("Courier New", 10)
+    DOS_FONT_BOLD = ("Courier New", 10, "bold")
+    DOS_FONT_TITLE = ("Courier New", 14, "bold")
+    
     def __init__(self, root):
         self.root = root
         self.root.title("🏢 Weyland-Yutani Transmute Tool")
         self.root.geometry("900x700")
+        self.root.configure(bg=self.DOS_BG)
+        
+        # Initialize debug window
+        self.debug_window = DebugWindow(root)
+        
+        # Install exception handler
+        self.exception_handler = DebugExceptionHandler(self.debug_window)
+        self.exception_handler.install()
         
         # Initialize processors
         self.analyzer = MeshAnalyzer()
@@ -39,121 +57,286 @@ class TransmuteApp:
         
         self._create_ui()
         self._redirect_console()
+        self._setup_keyboard_shortcuts()
+        
+        # Log startup
+        self.debug_window.log_info("Application initialized successfully")
     
     def _create_ui(self):
         """Create the user interface"""
         
         # Header
-        header_frame = ttk.Frame(self.root, padding="10")
+        header_frame = tk.Frame(self.root, bg=self.DOS_BG, padx=10, pady=10)
         header_frame.pack(fill=tk.X)
         
-        title_label = ttk.Label(
+        title_label = tk.Label(
             header_frame,
-            text="🏢 Weyland-Yutani Transmute Tool",
-            font=("Arial", 16, "bold")
+            text="WEYLAND-YUTANI TRANSMUTE TOOL",
+            font=self.DOS_FONT_TITLE,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG
         )
         title_label.pack()
         
-        subtitle_label = ttk.Label(
+        subtitle_label = tk.Label(
             header_frame,
             text='"Building Better Worlds... One Mesh at a Time"',
-            font=("Arial", 10, "italic")
+            font=self.DOS_FONT,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG_DIM
         )
         subtitle_label.pack()
         
         # Main container
-        main_frame = ttk.Frame(self.root, padding="10")
+        main_frame = tk.Frame(self.root, bg=self.DOS_BG, padx=10, pady=10)
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         # Left panel - Controls
-        left_panel = ttk.Frame(main_frame, padding="5")
+        left_panel = tk.Frame(main_frame, bg=self.DOS_BG, padx=5, pady=5)
         left_panel.pack(side=tk.LEFT, fill=tk.Y)
         
         # File selection
-        file_frame = ttk.LabelFrame(left_panel, text="Input File", padding="10")
+        file_frame = tk.LabelFrame(
+            left_panel, 
+            text="INPUT FILE", 
+            bg=self.DOS_BG, 
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            padx=10, 
+            pady=10
+        )
         file_frame.pack(fill=tk.X, pady=5)
         
-        self.file_label = ttk.Label(file_frame, text="No file selected", wraplength=200)
+        self.file_label = tk.Label(
+            file_frame, 
+            text="No file selected", 
+            wraplength=200,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG_DIM,
+            font=self.DOS_FONT,
+            justify=tk.LEFT
+        )
         self.file_label.pack()
         
-        ttk.Button(
+        tk.Button(
             file_frame,
-            text="📁 Load STL File",
-            command=self.load_file
+            text="[ LOAD STL FILE ]",
+            command=self.load_file,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            activebackground=self.DOS_FG,
+            activeforeground=self.DOS_BG,
+            relief=tk.FLAT,
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
         ).pack(pady=5)
         
         # Analysis section
-        analysis_frame = ttk.LabelFrame(left_panel, text="Analysis", padding="10")
+        analysis_frame = tk.LabelFrame(
+            left_panel, 
+            text="ANALYSIS", 
+            bg=self.DOS_BG, 
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            padx=10, 
+            pady=10
+        )
         analysis_frame.pack(fill=tk.X, pady=5)
         
-        ttk.Button(
+        tk.Button(
             analysis_frame,
-            text="🔍 Analyze Mesh",
-            command=self.analyze_mesh
+            text="[ ANALYZE MESH ]",
+            command=self.analyze_mesh,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            activebackground=self.DOS_FG,
+            activeforeground=self.DOS_BG,
+            relief=tk.FLAT,
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
         ).pack(fill=tk.X, pady=2)
         
         # Repair section
-        repair_frame = ttk.LabelFrame(left_panel, text="Repair", padding="10")
+        repair_frame = tk.LabelFrame(
+            left_panel, 
+            text="REPAIR", 
+            bg=self.DOS_BG, 
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            padx=10, 
+            pady=10
+        )
         repair_frame.pack(fill=tk.X, pady=5)
         
-        ttk.Button(
+        tk.Button(
             repair_frame,
-            text="🔧 Repair Mesh",
-            command=self.repair_mesh
+            text="[ REPAIR MESH ]",
+            command=self.repair_mesh,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            activebackground=self.DOS_FG,
+            activeforeground=self.DOS_BG,
+            relief=tk.FLAT,
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
         ).pack(fill=tk.X, pady=2)
         
         # Export section
-        export_frame = ttk.LabelFrame(left_panel, text="Export", padding="10")
+        export_frame = tk.LabelFrame(
+            left_panel, 
+            text="EXPORT", 
+            bg=self.DOS_BG, 
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            padx=10, 
+            pady=10
+        )
         export_frame.pack(fill=tk.X, pady=5)
         
         self.export_stl_var = tk.BooleanVar(value=True)
         self.export_step_var = tk.BooleanVar(value=True)
         
-        ttk.Checkbutton(
+        tk.Checkbutton(
             export_frame,
             text="Export STL",
-            variable=self.export_stl_var
+            variable=self.export_stl_var,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT,
+            selectcolor=self.DOS_BG,
+            activebackground=self.DOS_BG,
+            activeforeground=self.DOS_FG
         ).pack(anchor=tk.W)
         
-        ttk.Checkbutton(
+        tk.Checkbutton(
             export_frame,
             text="Export STEP",
-            variable=self.export_step_var
+            variable=self.export_step_var,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT,
+            selectcolor=self.DOS_BG,
+            activebackground=self.DOS_BG,
+            activeforeground=self.DOS_FG
         ).pack(anchor=tk.W)
         
-        ttk.Button(
+        tk.Button(
             export_frame,
-            text="💾 Export Files",
-            command=self.export_files
+            text="[ EXPORT FILES ]",
+            command=self.export_files,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            activebackground=self.DOS_FG,
+            activeforeground=self.DOS_BG,
+            relief=tk.FLAT,
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
         ).pack(fill=tk.X, pady=5)
         
         # Status section
-        status_frame = ttk.LabelFrame(left_panel, text="Status", padding="10")
+        status_frame = tk.LabelFrame(
+            left_panel, 
+            text="STATUS", 
+            bg=self.DOS_BG, 
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            padx=10, 
+            pady=10
+        )
         status_frame.pack(fill=tk.BOTH, expand=True, pady=5)
         
-        self.status_text = tk.Text(status_frame, height=10, width=30, wrap=tk.WORD)
+        self.status_text = tk.Text(
+            status_frame, 
+            height=8, 
+            width=30, 
+            wrap=tk.WORD,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT,
+            insertbackground=self.DOS_FG,
+            relief=tk.FLAT,
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
+        )
         self.status_text.pack(fill=tk.BOTH, expand=True)
-        self._update_status("Ready for transmutation...")
+        self._update_status("READY FOR TRANSMUTATION...")
+        
+        # Progress bar (custom DOS style)
+        progress_container = tk.Frame(status_frame, bg=self.DOS_BG)
+        progress_container.pack(fill=tk.X, pady=(5, 0))
+        
+        self.progress_var = tk.DoubleVar()
+        self.progress_canvas = tk.Canvas(
+            progress_container,
+            height=20,
+            bg=self.DOS_BG,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
+        )
+        self.progress_canvas.pack(fill=tk.X)
+        
+        # Progress label
+        self.progress_label = tk.Label(
+            status_frame, 
+            text="", 
+            font=self.DOS_FONT,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG_DIM
+        )
+        self.progress_label.pack(pady=(2, 0))
         
         # Right panel - Console output
-        right_panel = ttk.Frame(main_frame, padding="5")
+        right_panel = tk.Frame(main_frame, bg=self.DOS_BG, padx=5, pady=5)
         right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
         
-        console_frame = ttk.LabelFrame(right_panel, text="Console Output", padding="10")
+        console_frame = tk.LabelFrame(
+            right_panel, 
+            text="CONSOLE OUTPUT", 
+            bg=self.DOS_BG, 
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            padx=10, 
+            pady=10
+        )
         console_frame.pack(fill=tk.BOTH, expand=True)
         
         self.console_text = scrolledtext.ScrolledText(
             console_frame,
             wrap=tk.WORD,
-            font=("Consolas", 9)
+            font=self.DOS_FONT,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            insertbackground=self.DOS_FG,
+            relief=tk.FLAT,
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
         )
         self.console_text.pack(fill=tk.BOTH, expand=True)
         
         # Clear console button
-        ttk.Button(
+        tk.Button(
             console_frame,
-            text="Clear Console",
-            command=self.clear_console
+            text="[ CLEAR CONSOLE ]",
+            command=self.clear_console,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            activebackground=self.DOS_FG,
+            activeforeground=self.DOS_BG,
+            relief=tk.FLAT,
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
         ).pack(pady=5)
     
     def _redirect_console(self):
@@ -172,10 +355,56 @@ class TransmuteApp:
         
         sys.stdout = ConsoleRedirector(self.console_text)
     
+    def _setup_keyboard_shortcuts(self):
+        """Setup keyboard shortcuts"""
+        # Ctrl+D to toggle debug window
+        self.root.bind('<Control-d>', lambda e: self.debug_window.toggle())
+        self.root.bind('<Control-D>', lambda e: self.debug_window.toggle())
+    
     def _update_status(self, message):
         """Update status text"""
         self.status_text.delete(1.0, tk.END)
         self.status_text.insert(1.0, message)
+    
+    def _update_progress(self, percent, label=""):
+        """Update progress bar and label (DOS style)"""
+        self.progress_var.set(percent)
+        self.progress_label.config(text=label)
+        
+        # Draw custom DOS-style progress bar
+        width = self.progress_canvas.winfo_width()
+        height = 20
+        
+        if width > 1:  # Only draw if canvas is visible
+            self.progress_canvas.delete("all")
+            
+            # Calculate filled width
+            filled_width = int((width - 4) * (percent / 100))
+            
+            # Draw filled portion (green)
+            if filled_width > 0:
+                self.progress_canvas.create_rectangle(
+                    2, 2, filled_width + 2, height - 2,
+                    fill=self.DOS_FG,
+                    outline=""
+                )
+            
+            # Draw percentage text
+            percent_text = f"{int(percent)}%"
+            self.progress_canvas.create_text(
+                width // 2, height // 2,
+                text=percent_text,
+                fill=self.DOS_BG if percent > 50 else self.DOS_FG,
+                font=self.DOS_FONT_BOLD
+            )
+        
+        self.root.update_idletasks()
+    
+    def _reset_progress(self):
+        """Reset progress bar"""
+        self.progress_var.set(0)
+        self.progress_label.config(text="")
+        self.progress_canvas.delete("all")
     
     def clear_console(self):
         """Clear console output"""
@@ -183,113 +412,192 @@ class TransmuteApp:
     
     def load_file(self):
         """Load an STL file"""
-        file_path = filedialog.askopenfilename(
-            title="Select STL File",
-            filetypes=[("STL Files", "*.stl"), ("All Files", "*.*")]
-        )
-        
-        if file_path:
-            self.current_file = file_path
-            file_name = Path(file_path).name
-            self.file_label.config(text=file_name)
-            self._update_status(f"Loaded: {file_name}")
-            print(f"\n✓ File selected: {file_name}")
+        try:
+            self.debug_window.start_operation("load_file")
+            self.debug_window.log_info("Opening file dialog...")
+            
+            file_path = filedialog.askopenfilename(
+                title="Select STL File",
+                filetypes=[("STL Files", "*.stl"), ("All Files", "*.*")]
+            )
+            
+            if file_path:
+                self.current_file = file_path
+                file_name = Path(file_path).name
+                self.file_label.config(text=file_name)
+                self._update_status(f"Loaded: {file_name}")
+                print(f"\n✓ File selected: {file_name}")
+                self.debug_window.log_info(f"File loaded successfully: {file_name}")
+            else:
+                self.debug_window.log_info("File selection cancelled")
+            
+            self.debug_window.end_operation("load_file")
+        except Exception as e:
+            self.debug_window.log_error(f"Error loading file: {str(e)}")
+            self.debug_window.end_operation("load_file")
+            raise
     
     def analyze_mesh(self):
         """Analyze the loaded mesh"""
-        if not self.current_file:
-            messagebox.showwarning("No File", "Please load an STL file first")
-            return
-        
-        self._update_status("Analyzing mesh...")
-        
-        if self.analyzer.load_mesh(self.current_file):
-            self.analysis_results = self.analyzer.analyze()
+        try:
+            if not self.current_file:
+                self.debug_window.log_warning("Analyze attempted without file loaded")
+                messagebox.showwarning("No File", "Please load an STL file first")
+                return
             
-            # Update status with results
-            severity = self.analysis_results.get("severity", "unknown")
-            issue_count = len(self.analysis_results.get("issues", []))
+            self.debug_window.start_operation("analyze_mesh")
+            self.debug_window.log_info(f"Starting mesh analysis: {Path(self.current_file).name}")
+            self._update_status("Analyzing mesh...")
             
-            status_msg = f"Analysis complete\n"
-            status_msg += f"Severity: {severity.upper()}\n"
-            status_msg += f"Issues: {issue_count}"
+            if self.analyzer.load_mesh(self.current_file):
+                self.analysis_results = self.analyzer.analyze()
+                
+                # Update status with results
+                severity = self.analysis_results.get("severity", "unknown")
+                issue_count = len(self.analysis_results.get("issues", []))
+                
+                status_msg = f"Analysis complete\n"
+                status_msg += f"Severity: {severity.upper()}\n"
+                status_msg += f"Issues: {issue_count}"
+                
+                self._update_status(status_msg)
+                self.debug_window.log_info(f"Analysis complete - Severity: {severity}, Issues: {issue_count}")
+                
+                if severity in ["critical", "high"]:
+                    self.debug_window.log_warning(f"Mesh has {severity} severity issues")
+            else:
+                self._update_status("Analysis failed")
+                self.debug_window.log_error("Failed to load mesh for analysis")
+                messagebox.showerror("Error", "Failed to analyze mesh")
             
-            self._update_status(status_msg)
-        else:
-            self._update_status("Analysis failed")
-            messagebox.showerror("Error", "Failed to analyze mesh")
+            self.debug_window.end_operation("analyze_mesh")
+        except Exception as e:
+            self.debug_window.log_error(f"Error during mesh analysis: {str(e)}")
+            self.debug_window.end_operation("analyze_mesh")
+            raise
     
     def repair_mesh(self):
         """Repair the loaded mesh"""
-        if not self.current_file:
-            messagebox.showwarning("No File", "Please load an STL file first")
-            return
-        
-        if not self.analysis_results:
-            messagebox.showinfo("Analyze First", "Please analyze the mesh first")
-            return
-        
-        self._update_status("Repairing mesh...")
-        
-        # Load mesh into repairer
-        if self.analyzer.mesh:
-            self.repairer.load_mesh(self.analyzer.mesh)
-            self.repaired_mesh = self.repairer.repair()
+        try:
+            if not self.current_file:
+                self.debug_window.log_warning("Repair attempted without file loaded")
+                messagebox.showwarning("No File", "Please load an STL file first")
+                return
             
-            # Validate repaired mesh
-            validation = self.validator.validate_mesh(self.repaired_mesh)
+            if not self.analysis_results:
+                self.debug_window.log_warning("Repair attempted without analysis")
+                messagebox.showinfo("Analyze First", "Please analyze the mesh first")
+                return
             
-            if validation["is_valid"]:
-                self._update_status("Repair successful!\nMesh is valid")
-                messagebox.showinfo("Success", "Mesh repaired successfully!")
+            self.debug_window.start_operation("repair_mesh")
+            self.debug_window.log_info("Starting mesh repair...")
+            self._update_status("Repairing mesh...")
+            self._reset_progress()
+            
+            # Load mesh into repairer
+            if self.analyzer.mesh:
+                # Set up progress callback
+                def progress_callback(step, total, message):
+                    percent = (step / total) * 100
+                    self._update_progress(percent, message)
+                    self.debug_window.log_info(f"Repair progress: {int(percent)}% - {message}")
+                
+                self.repairer.load_mesh(self.analyzer.mesh)
+                self.repaired_mesh = self.repairer.repair(progress_callback=progress_callback)
+                
+                # Validate repaired mesh
+                self._update_progress(100, "Validating...")
+                self.debug_window.log_info("Validating repaired mesh...")
+                validation = self.validator.validate_mesh(self.repaired_mesh)
+                
+                self._reset_progress()
+                
+                if validation["is_valid"]:
+                    self._update_status("Repair successful!\nMesh is valid")
+                    self.debug_window.log_info("Mesh repair completed successfully - validation passed")
+                    messagebox.showinfo("Success", "Mesh repaired successfully!")
+                else:
+                    self._update_status("Repair complete\nWarnings present")
+                    warning_count = len(validation.get("warnings", []))
+                    self.debug_window.log_warning(f"Mesh repaired but has {warning_count} validation warnings")
+                    messagebox.showwarning(
+                        "Partial Success",
+                        "Mesh repaired but validation warnings present"
+                    )
             else:
-                self._update_status("Repair complete\nWarnings present")
-                messagebox.showwarning(
-                    "Partial Success",
-                    "Mesh repaired but validation warnings present"
-                )
-        else:
-            self._update_status("Repair failed")
-            messagebox.showerror("Error", "Failed to repair mesh")
+                self._update_status("Repair failed")
+                self.debug_window.log_error("No mesh available for repair")
+                messagebox.showerror("Error", "Failed to repair mesh")
+            
+            self.debug_window.end_operation("repair_mesh")
+        except Exception as e:
+            self.debug_window.log_error(f"Error during mesh repair: {str(e)}")
+            self.debug_window.end_operation("repair_mesh")
+            raise
     
     def export_files(self):
         """Export repaired mesh and/or STEP file"""
-        if not self.repaired_mesh:
-            messagebox.showwarning("No Repair", "Please repair the mesh first")
-            return
-        
-        # Get output directory
-        output_dir = filedialog.askdirectory(title="Select Output Directory")
-        if not output_dir:
-            return
-        
-        output_path = Path(output_dir)
-        base_name = Path(self.current_file).stem + "_repaired"
-        
-        success_count = 0
-        
-        # Export STL
-        if self.export_stl_var.get():
-            stl_path = output_path / f"{base_name}.stl"
-            if self.repairer.save_repaired_mesh(str(stl_path)):
-                success_count += 1
-        
-        # Export STEP
-        if self.export_step_var.get():
-            if self.converter.is_available():
-                step_path = output_path / f"{base_name}.step"
-                self.converter.load_mesh(self.repaired_mesh)
-                if self.converter.convert_to_step(str(step_path)):
+        try:
+            if not self.repaired_mesh:
+                self.debug_window.log_warning("Export attempted without repaired mesh")
+                messagebox.showwarning("No Repair", "Please repair the mesh first")
+                return
+            
+            self.debug_window.start_operation("export_files")
+            self.debug_window.log_info("Opening output directory dialog...")
+            
+            # Get output directory
+            output_dir = filedialog.askdirectory(title="Select Output Directory")
+            if not output_dir:
+                self.debug_window.log_info("Export cancelled by user")
+                self.debug_window.end_operation("export_files")
+                return
+            
+            output_path = Path(output_dir)
+            base_name = Path(self.current_file).stem + "_repaired"
+            self.debug_window.log_info(f"Exporting to: {output_dir}")
+            
+            success_count = 0
+            
+            # Export STL
+            if self.export_stl_var.get():
+                stl_path = output_path / f"{base_name}.stl"
+                self.debug_window.log_info(f"Exporting STL: {stl_path.name}")
+                if self.repairer.save_repaired_mesh(str(stl_path)):
                     success_count += 1
+                    self.debug_window.log_info("STL export successful")
+                else:
+                    self.debug_window.log_error("STL export failed")
+            
+            # Export STEP
+            if self.export_step_var.get():
+                if self.converter.is_available():
+                    step_path = output_path / f"{base_name}.step"
+                    self.debug_window.log_info(f"Exporting STEP: {step_path.name}")
+                    self.converter.load_mesh(self.repaired_mesh)
+                    if self.converter.convert_to_step(str(step_path)):
+                        success_count += 1
+                        self.debug_window.log_info("STEP export successful")
+                    else:
+                        self.debug_window.log_error("STEP export failed")
+                else:
+                    self.debug_window.log_warning("FreeCAD not available for STEP export")
+                    messagebox.showwarning(
+                        "STEP Unavailable",
+                        "FreeCAD not installed. STEP export unavailable."
+                    )
+            
+            if success_count > 0:
+                self._update_status(f"Export complete!\n{success_count} file(s) saved")
+                self.debug_window.log_info(f"Export completed successfully - {success_count} file(s) saved")
+                messagebox.showinfo("Success", f"Exported {success_count} file(s)")
             else:
-                messagebox.showwarning(
-                    "STEP Unavailable",
-                    "FreeCAD not installed. STEP export unavailable."
-                )
-        
-        if success_count > 0:
-            self._update_status(f"Export complete!\n{success_count} file(s) saved")
-            messagebox.showinfo("Success", f"Exported {success_count} file(s)")
-        else:
-            self._update_status("Export failed")
-            messagebox.showerror("Error", "Export failed")
+                self._update_status("Export failed")
+                self.debug_window.log_error("All export operations failed")
+                messagebox.showerror("Error", "Export failed")
+            
+            self.debug_window.end_operation("export_files")
+        except Exception as e:
+            self.debug_window.log_error(f"Error during export: {str(e)}")
+            self.debug_window.end_operation("export_files")
+            raise

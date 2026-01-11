@@ -1,0 +1,144 @@
+================================================================================
+  HOW TO ORGANIZE THE ROOT FOLDER
+================================================================================
+
+OPTION 1: AUTOMATIC (RECOMMENDED)
+----------------------------------
+
+Simply double-click the batch file:
+
+    organize_root.bat
+
+Or run from command line:
+
+    organize_root.bat
+
+The script will:
+  ✓ Create proper directory structure
+  ✓ Move all files to appropriate locations
+  ✓ Create documentation indexes
+  ✓ Clean up temporary files
+  ✓ Show you a summary of changes
+
+OPTION 2: MANUAL
+----------------
+
+If you prefer to organize manually, see ORGANIZATION_PLAN.md for details.
+
+================================================================================
+  WHAT THE SCRIPT DOES
+================================================================================
+
+CREATES DIRECTORIES:
+  - docs\user\        (User documentation)
+  - docs\development\ (Developer documentation)
+  - docs\git\         (Git workflow docs)
+  - scripts\          (Utility scripts)
+
+MOVES FILES:
+
+  To docs\user\:
+    - INSTALLATION_GUIDE.txt → INSTALLATION.md
+    - QUICK_START.txt → QUICK_START.md
+    - START_HERE.txt → START_HERE.md
+
+  To docs\development\:
+    - DEBUG_WINDOW_INTEGRATION.md
+    - DEBUG_QUICK_REFERENCE.md
+    - INTEGRATION_COMPLETE.md
+    - DOS_THEME.txt → DOS_THEME.md
+    - PROGRESS_BAR_FEATURE.txt → PROGRESS_BAR_FEATURE.md
+    - BUGFIX_NOTES.txt → BUGFIX_NOTES.md
+    - BUGFIX_DEBUG_WINDOW.md
+    - PROJECT_SUMMARY.md
+    - ORGANIZATION_PLAN.md
+
+  To docs\git\:
+    - GIT_WORKFLOW.txt → GIT_WORKFLOW.md
+    - GITHUB_SETUP.txt → GITHUB_SETUP.md
+
+  To scripts\:
+    - install_minimal.bat
+    - run_app.bat
+    - check_one_file.py
+    - test_syntax.py
+    - organize_project.py
+
+  To tests\:
+    - test_debug_integration.py
+    - test_quick.py
+
+CREATES:
+  - docs\README.md (documentation index)
+  - scripts\README.md (scripts guide)
+
+CLEANS UP:
+  - ROOT_README.txt (deleted)
+  - python (stray file, deleted)
+
+KEEPS IN ROOT:
+  - LICENSE
+  - README.md
+  - requirements.txt
+  - setup.py
+  - pytest.ini
+  - COMMIT_MESSAGE.txt (for commit)
+  - organize_root.bat (this script)
+
+================================================================================
+  AFTER ORGANIZING
+================================================================================
+
+1. VERIFY THE STRUCTURE
+   - Check that files are in correct locations
+   - Review docs\README.md for documentation index
+
+2. UPDATE PATHS (if needed)
+   - Update main README.md if it references moved files
+   - Update any hardcoded paths in scripts
+
+3. TEST EVERYTHING
+   Run from project root:
+     python tests\test_quick.py
+     python tests\test_debug_integration.py
+     python scripts\run_app.bat
+
+4. COMMIT THE CHANGES
+   git add .
+   git commit -m "chore: Organize project structure"
+   git push origin main
+
+================================================================================
+  TROUBLESHOOTING
+================================================================================
+
+Q: Script says "file not found"
+A: Some files may have already been moved or don't exist. This is normal.
+
+Q: Can I run the script multiple times?
+A: Yes! It will skip files that are already in the correct location.
+
+Q: What if I want to undo the organization?
+A: You can manually move files back, or use git to revert:
+   git checkout -- .
+
+Q: Will this break my application?
+A: No! The script only moves documentation and utility files.
+   Source code (src\) and tests\ remain untouched.
+
+================================================================================
+  SAFETY FEATURES
+================================================================================
+
+✓ Creates directories before moving files
+✓ Skips files that don't exist
+✓ Shows what it's doing at each step
+✓ Pauses before starting (you can cancel with Ctrl+C)
+✓ Provides summary at the end
+✓ Doesn't modify source code
+
+================================================================================
+
+Ready to organize? Run:  organize_root.bat
+
+================================================================================

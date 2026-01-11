@@ -29,9 +29,12 @@ class MeshRepairer:
         print(f"  Original vertices: {len(mesh.vertices)}")
         print(f"  Original faces: {len(mesh.faces)}")
     
-    def repair(self) -> trimesh.Trimesh:
+    def repair(self, progress_callback=None) -> trimesh.Trimesh:
         """
         Perform comprehensive mesh repair
+        
+        Args:
+            progress_callback: Optional callback function(step, total, message)
         
         Returns:
             Repaired Trimesh object
@@ -44,29 +47,48 @@ class MeshRepairer:
         # Start with a copy
         mesh = self.original_mesh.copy()
         
+        total_steps = 6
+        original_vertices = len(mesh.vertices)
+        original_faces = len(mesh.faces)
+        
         # Step 1: Remove duplicate vertices
         print("  ⏳ Removing duplicate vertices...")
+        if progress_callback:
+            progress_callback(1, total_steps, f"Merging vertices... ({len(mesh.vertices):,} vertices)")
         mesh.merge_vertices()
         
         # Step 2: Remove degenerate faces
         print("  ⏳ Removing degenerate faces...")
+        if progress_callback:
+            progress_callback(2, total_steps, f"Removing degenerate faces... ({len(mesh.faces):,} faces)")
         mesh.remove_degenerate_faces()
         
         # Step 3: Remove duplicate faces
         print("  ⏳ Removing duplicate faces...")
+        if progress_callback:
+            progress_callback(3, total_steps, f"Removing duplicates... ({len(mesh.faces):,} faces)")
         mesh.remove_duplicate_faces()
         
         # Step 4: Fix normals
         print("  ⏳ Fixing face normals...")
+        if progress_callback:
+            progress_callback(4, total_steps, f"Fixing normals... ({len(mesh.faces):,} faces)")
         mesh.fix_normals()
         
         # Step 5: Fill holes (if not watertight)
         if not mesh.is_watertight:
             print("  ⏳ Attempting to fill holes...")
+            if progress_callback:
+                progress_callback(5, total_steps, f"Filling holes... ({len(mesh.faces):,} faces)")
             mesh.fill_holes()
+        else:
+            if progress_callback:
+                progress_callback(5, total_steps, "Mesh already watertight")
         
         # Step 6: Remove unreferenced vertices
         print("  ⏳ Cleaning unreferenced vertices...")
+        if progress_callback:
+            progress_callback(6, total_steps, f"Cleaning... ({len(mesh.vertices):,} vertices)")
         mesh.remove_unreferenced_vertices()
         
         self.repaired_mesh = mesh
