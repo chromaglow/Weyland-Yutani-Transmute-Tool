@@ -61,13 +61,13 @@ class MeshRepairer:
         print("  ⏳ Removing degenerate faces...")
         if progress_callback:
             progress_callback(2, total_steps, f"Removing degenerate faces... ({len(mesh.faces):,} faces)")
-        mesh.remove_degenerate_faces()
+        mesh.update_faces(mesh.nondegenerate_faces())
         
         # Step 3: Remove duplicate faces
         print("  ⏳ Removing duplicate faces...")
         if progress_callback:
             progress_callback(3, total_steps, f"Removing duplicates... ({len(mesh.faces):,} faces)")
-        mesh.remove_duplicate_faces()
+        mesh.update_faces(mesh.unique_faces())
         
         # Step 4: Fix normals
         print("  ⏳ Fixing face normals...")

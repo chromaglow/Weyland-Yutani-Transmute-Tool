@@ -278,6 +278,7 @@ class TransmuteApp:
         self.progress_canvas = tk.Canvas(
             progress_container,
             height=20,
+            width=400,  # Set minimum width
             bg=self.DOS_BG,
             highlightthickness=1,
             highlightbackground=self.DOS_FG
@@ -346,9 +347,13 @@ class TransmuteApp:
                 self.text_widget = text_widget
             
             def write(self, text):
-                self.text_widget.insert(tk.END, text)
-                self.text_widget.see(tk.END)
-                self.text_widget.update()
+                try:
+                    self.text_widget.insert(tk.END, text)
+                    self.text_widget.see(tk.END)
+                    self.text_widget.update()
+                except tk.TclError:
+                    # Widget has been destroyed
+                    pass
             
             def flush(self):
                 pass
@@ -363,19 +368,23 @@ class TransmuteApp:
     
     def _update_status(self, message):
         """Update status text"""
-        self.status_text.delete(1.0, tk.END)
-        self.status_text.insert(1.0, message)
+        try:
+            self.status_text.delete(1.0, tk.END)
+            self.status_text.insert(1.0, message)
+        except tk.TclError:
+            # Widget has been destroyed
+            pass
     
     def _update_progress(self, percent, label=""):
         """Update progress bar and label (DOS style)"""
-        self.progress_var.set(percent)
-        self.progress_label.config(text=label)
-        
-        # Draw custom DOS-style progress bar
-        width = self.progress_canvas.winfo_width()
-        height = 20
-        
-        if width > 1:  # Only draw if canvas is visible
+        try:
+            self.progress_var.set(percent)
+            self.progress_label.config(text=label)
+            
+            # Draw custom DOS-style progress bar
+            width = max(self.progress_canvas.winfo_width(), 400)  # Use at least 400px width
+            height = 20
+            
             self.progress_canvas.delete("all")
             
             # Calculate filled width
@@ -397,18 +406,32 @@ class TransmuteApp:
                 fill=self.DOS_BG if percent > 50 else self.DOS_FG,
                 font=self.DOS_FONT_BOLD
             )
+            
+            # Force UI update
+            self.root.update_idletasks()
+        except tk.TclError:
+            # Widget has been destroyed
+            pass
         
         self.root.update_idletasks()
     
     def _reset_progress(self):
         """Reset progress bar"""
-        self.progress_var.set(0)
-        self.progress_label.config(text="")
-        self.progress_canvas.delete("all")
+        try:
+            self.progress_var.set(0)
+            self.progress_label.config(text="")
+            self.progress_canvas.delete("all")
+        except tk.TclError:
+            # Widget has been destroyed
+            pass
     
     def clear_console(self):
         """Clear console output"""
-        self.console_text.delete(1.0, tk.END)
+        try:
+            self.console_text.delete(1.0, tk.END)
+        except tk.TclError:
+            # Widget has been destroyed
+            pass
     
     def load_file(self):
         """Load an STL file"""

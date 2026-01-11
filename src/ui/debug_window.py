@@ -142,15 +142,19 @@ class DebugWindow:
     
     def _log(self, message, tag="info", show_window=False):
         """Internal logging method"""
-        if self.text_widget:
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            full_message = f"[{timestamp}] {message}\n"
-            
-            self.text_widget.insert(tk.END, full_message, tag)
-            self.text_widget.see(tk.END)
-            
-            if show_window and not self.is_visible:
-                self.show()
+        try:
+            if self.text_widget:
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                full_message = f"[{timestamp}] {message}\n"
+                
+                self.text_widget.insert(tk.END, full_message, tag)
+                self.text_widget.see(tk.END)
+                
+                if show_window and not self.is_visible:
+                    self.show()
+        except tk.TclError:
+            # Widget has been destroyed, stop monitoring
+            self.monitoring = False
     
     def _log_info(self, message):
         """Log info message (green) - internal use"""
@@ -222,32 +226,48 @@ class DebugWindow:
     
     def _update_status(self):
         """Update status label"""
-        if self.error_count > 0 or self.warning_count > 0:
-            status = f"[ERRORS: {self.error_count} | WARNINGS: {self.warning_count}]"
-            self.status_label.config(text=status, fg=self.DOS_FG_ERROR if self.error_count > 0 else self.DOS_FG_WARNING)
-        else:
-            self.status_label.config(text="[NO ERRORS]", fg=self.DOS_FG)
+        try:
+            if self.error_count > 0 or self.warning_count > 0:
+                status = f"[ERRORS: {self.error_count} | WARNINGS: {self.warning_count}]"
+                self.status_label.config(text=status, fg=self.DOS_FG_ERROR if self.error_count > 0 else self.DOS_FG_WARNING)
+            else:
+                self.status_label.config(text="[NO ERRORS]", fg=self.DOS_FG)
+        except tk.TclError:
+            # Widget has been destroyed, stop monitoring
+            self.monitoring = False
     
     def show(self):
         """Show the debug window"""
-        if not self.is_visible:
-            self.window.deiconify()
-            self.window.lift()
-            self.is_visible = True
+        try:
+            if not self.is_visible:
+                self.window.deiconify()
+                self.window.lift()
+                self.is_visible = True
+        except tk.TclError:
+            # Window has been destroyed, stop monitoring
+            self.monitoring = False
     
     def hide(self):
         """Hide the debug window"""
-        if self.is_visible:
-            self.window.withdraw()
-            self.is_visible = False
+        try:
+            if self.is_visible:
+                self.window.withdraw()
+                self.is_visible = False
+        except tk.TclError:
+            # Window has been destroyed
+            pass
     
     def clear(self):
         """Clear the debug log"""
-        if self.text_widget:
-            self.text_widget.delete(1.0, tk.END)
-            self.error_count = 0
-            self.warning_count = 0
-            self._update_status()
+        try:
+            if self.text_widget:
+                self.text_widget.delete(1.0, tk.END)
+                self.error_count = 0
+                self.warning_count = 0
+                self._update_status()
+        except tk.TclError:
+            # Widget has been destroyed
+            pass
             self._log_info("Debug log cleared.")
     
     def toggle(self):
