@@ -193,8 +193,7 @@ class TransmuteApp:
             file_name = Path(file_path).name
             self.file_label.config(text=file_name)
             self._update_status(f"Loaded: {file_name}")
-            print(f"
-✓ File selected: {file_name}")
+            print(f"\n✓ File selected: {file_name}")
     
     def analyze_mesh(self):
         """Analyze the loaded mesh"""
