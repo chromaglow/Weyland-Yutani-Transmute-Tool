@@ -39,8 +39,7 @@ class MeshRepairer:
         if self.original_mesh is None:
             raise ValueError("No mesh loaded for repair")
         
-        print("
-🔧 Initiating repair sequence...")
+        print("\n🔧 Initiating repair sequence...")
         
         # Start with a copy
         mesh = self.original_mesh.copy()
@@ -80,19 +79,16 @@ class MeshRepairer:
         """
         Print formatted repair report
         """
-        print("
-" + "=" * 60)
+        print("\n" + "=" * 60)
         print("🔧 REPAIR REPORT")
         print("=" * 60)
         
-        print("
-Before Repair:")
+        print("\nBefore Repair:")
         print(f"  Vertices: {len(self.original_mesh.vertices):,}")
         print(f"  Faces: {len(self.original_mesh.faces):,}")
         print(f"  Watertight: {self.original_mesh.is_watertight}")
         
-        print("
-After Repair:")
+        print("\nAfter Repair:")
         print(f"  Vertices: {len(self.repaired_mesh.vertices):,}")
         print(f"  Faces: {len(self.repaired_mesh.faces):,}")
         print(f"  Watertight: {self.repaired_mesh.is_watertight}")
@@ -101,17 +97,14 @@ After Repair:")
         vertex_diff = len(self.repaired_mesh.vertices) - len(self.original_mesh.vertices)
         face_diff = len(self.repaired_mesh.faces) - len(self.original_mesh.faces)
         
-        print("
-Changes:")
+        print("\nChanges:")
         print(f"  Vertices: {vertex_diff:+,}")
         print(f"  Faces: {face_diff:+,}")
         
         if self.repaired_mesh.is_watertight:
-            print("
-✓ Mesh successfully repaired and watertight!")
+            print("\n✓ Mesh successfully repaired and watertight!")
         else:
-            print("
-⚠️  Mesh repaired but still not watertight")
+            print("\n⚠️  Mesh repaired but still not watertight")
             print("   Consider manual repair in external tool")
         
         print("=" * 60)

@@ -23,8 +23,7 @@ class MeshValidator:
         Returns:
             Dictionary containing validation results
         """
-        print("
-✅ Initiating validation sequence...")
+        print("\n✅ Initiating validation sequence...")
         
         results = {
             "is_valid": True,
@@ -76,31 +75,26 @@ class MeshValidator:
         Args:
             results: Validation results dictionary
         """
-        print("
-" + "=" * 60)
+        print("\n" + "=" * 60)
         print("✅ VALIDATION REPORT")
         print("=" * 60)
         
-        print("
-Checks:")
+        print("\nChecks:")
         for check_name, passed in results["checks"].items():
             status = "✓" if passed else "✗"
             print(f"  {status} {check_name.replace('_', ' ').title()}")
         
         if results["warnings"]:
-            print("
-⚠️  Warnings:")
+            print("\n⚠️  Warnings:")
             for warning in results["warnings"]:
                 print(f"  - {warning}")
         
         if results["errors"]:
-            print("
-❌ Errors:")
+            print("\n❌ Errors:")
             for error in results["errors"]:
                 print(f"  - {error}")
         
-        print(f"
-{'✓ VALIDATION PASSED' if results['is_valid'] else '✗ VALIDATION FAILED'}")
+        print(f"\n{'✓ VALIDATION PASSED' if results['is_valid'] else '✗ VALIDATION FAILED'}")
         print("=" * 60)
     
     @staticmethod

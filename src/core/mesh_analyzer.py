@@ -48,8 +48,7 @@ class MeshAnalyzer:
         if self.mesh is None:
             return {"error": "No mesh loaded"}
         
-        print("
-🔍 Initiating mesh analysis...")
+        print("\n🔍 Initiating mesh analysis...")
         
         results = {
             "is_watertight": self.mesh.is_watertight,
@@ -124,13 +123,11 @@ class MeshAnalyzer:
         Args:
             results: Analysis results dictionary
         """
-        print("
-" + "=" * 60)
+        print("\n" + "=" * 60)
         print("📊 MESH ANALYSIS REPORT")
         print("=" * 60)
         
-        print(f"
-✓ Watertight: {results['is_watertight']}")
+        print(f"\n✓ Watertight: {results['is_watertight']}")
         print(f"✓ Winding Consistent: {results['is_winding_consistent']}")
         print(f"✓ Vertices: {results['vertex_count']:,}")
         print(f"✓ Faces: {results['face_count']:,}")
@@ -139,18 +136,15 @@ class MeshAnalyzer:
         if results['volume']:
             print(f"✓ Volume: {results['volume']:.2f} mm³")
         
-        print(f"
-⚠️  Issues Detected: {len(results['issues'])}")
+        print(f"\n⚠️  Issues Detected: {len(results['issues'])}")
         print(f"⚠️  Severity: {results['severity'].upper()}")
         
         if results['issues']:
-            print("
-Detailed Issues:")
+            print("\nDetailed Issues:")
             for i, issue in enumerate(results['issues'], 1):
                 print(f"  {i}. {issue}")
         else:
-            print("
-✓ No issues detected - mesh is clean!")
+            print("\n✓ No issues detected - mesh is clean!")
         
         print("=" * 60)
     

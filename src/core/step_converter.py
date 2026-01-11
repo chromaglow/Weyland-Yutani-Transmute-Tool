@@ -65,8 +65,7 @@ class StepConverter:
             print("   Please install FreeCAD to enable STEP export")
             return False
         
-        print("
-🔄 Initiating STEP conversion...")
+        print("\n🔄 Initiating STEP conversion...")
         
         try:
             # This will be implemented with FreeCAD integration
