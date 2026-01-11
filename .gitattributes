@@ -1,2 +1,14 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Python files
+*.py text eol=lf
+
+# STL files are binary
+*.stl binary
+*.step binary
+*.stp binary
+
+# Documentation
+*.md text eol=lf
+*.txt text eol=lf

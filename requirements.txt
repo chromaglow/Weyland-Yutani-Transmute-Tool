@@ -1,0 +1,15 @@
+# Core Dependencies - Using pre-built wheels
+# Compatible with Python 3.8-3.13
+
+# Use --only-binary flag to avoid compilation
+numpy
+trimesh
+scipy
+networkx
+
+# Note: pymeshfix requires compilation, making it optional
+# If installation fails, the tool will still work without it
+
+# Testing (optional)
+pytest
+pytest-cov
