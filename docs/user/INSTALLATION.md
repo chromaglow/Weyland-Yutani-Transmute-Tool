@@ -9,12 +9,12 @@ Some packages don't have pre-built versions yet for Python 3.14.
 🚀 QUICK START - TRY THESE IN ORDER:
 ================================================================================
 
-METHOD 1: Minimal Installation (RECOMMENDED - Try This First!)
+METHOD 1: Complete Installation (RECOMMENDED - Try This First!)
 ---------------------------------------------------------------
 Double-click: install_minimal.bat
 
-This installs just trimesh, which includes numpy.
-Fastest and most likely to work!
+This installs trimesh and scipy for full mesh repair functionality.
+Most reliable and includes all features!
 
 
 METHOD 2: Simple Installation
@@ -36,10 +36,10 @@ Attempts to install all packages including optional ones.
 
 Open Command Prompt in this folder and run:
 
-Minimal (Just what you need):
-    python -m pip install trimesh
+Complete Installation (Recommended):
+    python -m pip install trimesh scipy
 
-OR with more packages:
+OR install all requirements:
     python -m pip install --only-binary :all: numpy scipy trimesh networkx
 
 ================================================================================
@@ -74,10 +74,10 @@ If you see a version number, you're good to go!
 
 REQUIRED:
   trimesh  - Core mesh processing (includes numpy)
+  scipy    - Advanced mesh repair algorithms
   numpy    - Math operations (installed with trimesh)
 
 OPTIONAL (Nice to have but not required):
-  scipy    - Better algorithms
   networkx - Graph operations
   pytest   - Testing framework
 

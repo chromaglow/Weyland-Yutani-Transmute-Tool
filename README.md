@@ -21,11 +21,11 @@ Fixes STL files that appear solid but slice as hollow shells:
 
 ### Installation
 
-**Python 3.14 Users** (you!): Use minimal installation
+**Python 3.14 Users** (you!): Use complete installation
 
 ```bash
-# Easiest method - just install trimesh
-python -m pip install trimesh
+# Install trimesh and scipy for full functionality
+python -m pip install trimesh scipy
 
 # OR double-click:
 install_minimal.bat
@@ -60,17 +60,15 @@ python src/main.py
 
 ## 📋 Requirements
 
-### Minimum (Works with just this!)
+### Required
 - Python 3.8+
 - trimesh (includes numpy)
-
-### Recommended
-- scipy (better algorithms)
-- networkx (graph operations)
+- scipy (for complete mesh repair algorithms)
 
 ### Optional
 - FreeCAD (for STEP export to SolidWorks)
 - pytest (for testing)
+- networkx (additional graph operations)
 
 ---
 
@@ -128,6 +126,25 @@ Weyland-Yutani-Transmute-Tool/
 - ✅ **STEP Export** - Convert to solid body for CAD (requires FreeCAD)
 - ✅ **GUI Interface** - Easy-to-use graphical interface
 - ✅ **Console Output** - Detailed logging and progress
+
+---
+
+## 🧹 Maintenance
+
+### Clean Up & Update Project
+For comprehensive cleanup and updates:
+
+```bash
+# Double-click:
+cleanup_update.bat
+```
+
+This script will:
+- Clean cache files and temporary files
+- Update Python dependencies
+- Organize project files
+- Remove redundant files
+- Verify project structure
 
 ---
 

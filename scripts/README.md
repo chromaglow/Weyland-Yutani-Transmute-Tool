@@ -5,13 +5,12 @@ This directory contains utility scripts for the Weyland-Yutani Transmute Tool.
 ## Available Scripts
 
 ### Installation & Running
-- **install_minimal.bat** - Install minimal dependencies
+- **install_minimal.bat** - Install complete dependencies (trimesh + scipy)
 - **run_app.bat** - Run the application
 
-### Development Tools
-- **check_one_file.py** - Check a single file
-- **test_syntax.py** - Test Python syntax
-- **organize_project.py** - Organize project structure
+### Maintenance & Organization
+- **organize_project.py** - Organize project files into proper directories
+- **cleanup_update.bat** - Comprehensive cleanup and update script (in root)
 
 ## Usage
 

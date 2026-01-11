@@ -1,13 +1,13 @@
 @echo off
 echo.
 echo ========================================
-echo  MINIMAL Installation
-echo  Just the essentials!
+echo  WEYLAND-YUTANI TRANSMUTE TOOL
+echo  Complete Installation
 echo ========================================
 echo.
 
-echo Installing trimesh (includes numpy)...
-python -m pip install trimesh
+echo Installing trimesh and scipy for complete mesh repair...
+python -m pip install trimesh scipy
 
 if %errorlevel% equ 0 (
     echo.
@@ -15,8 +15,8 @@ if %errorlevel% equ 0 (
     echo  SUCCESS!
     echo ========================================
     echo.
-    echo Minimal installation complete!
-    echo The tool is ready to use.
+    echo Complete installation finished!
+    echo All mesh repair features are available.
     echo.
     echo Next: Double-click run_app.bat
     echo.
