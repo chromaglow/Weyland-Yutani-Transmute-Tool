@@ -16,9 +16,6 @@
 - [DOS Theme](development/DOS_THEME.md) - Theme implementation details
 - [Progress Bar Feature](development/PROGRESS_BAR_FEATURE.md) - Progress bar documentation
 - [Bug Fix Notes](development/BUGFIX_NOTES.md) - Bug fix history
-- [Debug Window Bugfix](development/BUGFIX_DEBUG_WINDOW.md) - Recent bugfix details
-- [Project Summary](development/PROJECT_SUMMARY.md) - Complete project summary
-- [Organization Plan](development/ORGANIZATION_PLAN.md) - Folder organization plan
 
 ### Git & Workflow
 - [Git Workflow](git/GIT_WORKFLOW.md) - Git workflow guide
@@ -30,6 +27,30 @@
 - **Installation**: See [Installation Guide](user/INSTALLATION.md)
 - **Development**: Check [Architecture](ARCHITECTURE.md)
 - **Debugging**: Use [Debug Quick Reference](development/DEBUG_QUICK_REFERENCE.md)
+
+## 📖 Documentation Structure
+
+```
+docs/
+├── README.md                    # This file
+├── user/                        # User-facing documentation
+│   ├── INSTALLATION.md
+│   ├── QUICK_START.md
+│   └── START_HERE.md
+├── development/                 # Developer documentation
+│   ├── DEBUG_WINDOW_INTEGRATION.md
+│   ├── DEBUG_QUICK_REFERENCE.md
+│   ├── INTEGRATION_COMPLETE.md
+│   ├── DOS_THEME.md
+│   ├── PROGRESS_BAR_FEATURE.md
+│   └── BUGFIX_NOTES.md
+├── git/                         # Git workflow documentation
+│   ├── GIT_WORKFLOW.md
+│   └── GITHUB_SETUP.md
+├── ARCHITECTURE.md              # System architecture
+├── INSTALLATION.md              # Installation details
+└── USER_GUIDE.md                # Complete user guide
+```
 
 ## 🏢 About
 
