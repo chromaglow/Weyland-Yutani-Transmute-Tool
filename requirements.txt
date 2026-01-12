@@ -6,6 +6,7 @@ numpy
 trimesh
 scipy
 networkx
+fast-simplification
 
 # Note: pymeshfix requires compilation, making it optional
 # If installation fails, the tool will still work without it

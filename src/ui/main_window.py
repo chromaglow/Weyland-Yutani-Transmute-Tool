@@ -10,10 +10,7 @@ import sys
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from core.mesh_analyzer import MeshAnalyzer
-from core.mesh_repairer import MeshRepairer
-from core.step_converter import StepConverter
-from core.validator import MeshValidator
+from core import MeshAnalyzer, MeshRepairer, StepConverter, MeshValidator, MeshSimplifier
 from ui.debug_window import DebugWindow, DebugExceptionHandler
 
 
@@ -49,11 +46,19 @@ class TransmuteApp:
         self.repairer = MeshRepairer()
         self.converter = StepConverter()
         self.validator = MeshValidator()
+        self.simplifier = MeshSimplifier()
         
         # State
         self.current_file = None
         self.analysis_results = None
         self.repaired_mesh = None
+        
+        # Slider state
+        self.current_faces_label = None
+        self.target_faces_label = None
+        self.reduction_percent_label = None
+        self.simplify_slider = None
+        self.simplify_slider_var = None
         
         self._create_ui()
         self._redirect_console()
@@ -186,6 +191,165 @@ class TransmuteApp:
             highlightthickness=1,
             highlightbackground=self.DOS_FG
         ).pack(fill=tk.X, pady=2)
+        
+        # Simplification section
+        simplify_frame = tk.LabelFrame(
+            left_panel, 
+            text="SIMPLIFY", 
+            bg=self.DOS_BG, 
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            padx=10, 
+            pady=10
+        )
+        simplify_frame.pack(fill=tk.X, pady=5)
+        
+        # Auto-simplify button
+        tk.Button(
+            simplify_frame,
+            text="[ AUTO SIMPLIFY ]",
+            command=self.auto_simplify_mesh,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            activebackground=self.DOS_FG,
+            activeforeground=self.DOS_BG,
+            relief=tk.FLAT,
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
+        ).pack(fill=tk.X, pady=2)
+        
+        # Manual simplification controls
+        manual_frame = tk.Frame(simplify_frame, bg=self.DOS_BG)
+        manual_frame.pack(fill=tk.X, pady=5)
+        
+        # Current mesh info
+        info_frame = tk.Frame(manual_frame, bg=self.DOS_BG)
+        info_frame.pack(fill=tk.X, pady=(0,5))
+        
+        self.current_faces_label = tk.Label(
+            info_frame,
+            text="Current: -- faces",
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT
+        )
+        self.current_faces_label.pack(side=tk.LEFT)
+        
+        self.target_faces_label = tk.Label(
+            info_frame,
+            text="Target: -- faces",
+            bg=self.DOS_BG,
+            fg=self.DOS_FG_DIM,
+            font=self.DOS_FONT
+        )
+        self.target_faces_label.pack(side=tk.LEFT, padx=(10,0))
+        
+        self.reduction_percent_label = tk.Label(
+            info_frame,
+            text="Reduction: --%",
+            bg=self.DOS_BG,
+            fg=self.DOS_FG_DIM,
+            font=self.DOS_FONT
+        )
+        self.reduction_percent_label.pack(side=tk.RIGHT)
+        
+        # Slider for percentage reduction
+        slider_frame = tk.Frame(manual_frame, bg=self.DOS_BG)
+        slider_frame.pack(fill=tk.X, pady=2)
+        
+        slider_label = tk.Label(
+            slider_frame,
+            text="Simplify:",
+            bg=self.DOS_BG,
+            fg=self.DOS_FG_DIM,
+            font=self.DOS_FONT
+        )
+        slider_label.pack(side=tk.LEFT)
+        
+        # Create slider variable
+        self.simplify_slider_var = tk.DoubleVar(value=0.0)
+        
+        self.simplify_slider = tk.Scale(
+            slider_frame,
+            from_=0,
+            to=95,
+            resolution=5,
+            orient=tk.HORIZONTAL,
+            variable=self.simplify_slider_var,
+            command=self._on_slider_change,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            troughcolor=self.DOS_BG,
+            activebackground=self.DOS_FG,
+            highlightthickness=0,
+            font=self.DOS_FONT
+        )
+        self.simplify_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(5,0))
+        
+        # Apply button for slider
+        tk.Button(
+            slider_frame,
+            text="[APPLY]",
+            command=self.apply_slider_simplification,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT,
+            activebackground=self.DOS_FG,
+            activeforeground=self.DOS_BG,
+            relief=tk.FLAT,
+            bd=1,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG,
+            width=8
+        ).pack(side=tk.RIGHT, padx=(5,0))
+        
+        # Face count reduction buttons
+        faces_label = tk.Label(
+            manual_frame,
+            text="Reduce to faces:",
+            bg=self.DOS_BG,
+            fg=self.DOS_FG_DIM,
+            font=self.DOS_FONT
+        )
+        faces_label.pack(anchor=tk.W, pady=(5,0))
+        
+        faces_buttons_frame = tk.Frame(manual_frame, bg=self.DOS_BG)
+        faces_buttons_frame.pack(fill=tk.X, pady=2)
+        
+        for faces in [10000, 5000, 1000, 500]:
+            tk.Button(
+                faces_buttons_frame,
+                text=f"[{faces}]",
+                command=lambda f=faces: self.simplify_by_face_count(f),
+                bg=self.DOS_BG,
+                fg=self.DOS_FG,
+                font=self.DOS_FONT,
+                activebackground=self.DOS_FG,
+                activeforeground=self.DOS_BG,
+                relief=tk.FLAT,
+                bd=1,
+                highlightthickness=1,
+                highlightbackground=self.DOS_FG,
+                width=8
+            ).pack(side=tk.LEFT, padx=1)
+        
+        # Reset button
+        tk.Button(
+            simplify_frame,
+            text="[ RESET MESH ]",
+            command=self.reset_mesh,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            font=self.DOS_FONT_BOLD,
+            activebackground=self.DOS_FG,
+            activeforeground=self.DOS_BG,
+            relief=tk.FLAT,
+            bd=2,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
+        ).pack(fill=tk.X, pady=5)
         
         # Export section
         export_frame = tk.LabelFrame(
@@ -451,6 +615,11 @@ class TransmuteApp:
                 self._update_status(f"Loaded: {file_name}")
                 print(f"\n✓ File selected: {file_name}")
                 self.debug_window.log_info(f"File loaded successfully: {file_name}")
+                
+                # Reset slider to 0 and update labels
+                if self.simplify_slider_var:
+                    self.simplify_slider_var.set(0.0)
+                    self._on_slider_change("0")
             else:
                 self.debug_window.log_info("File selection cancelled")
             
@@ -539,6 +708,11 @@ class TransmuteApp:
                     self._update_status("Repair successful!\nMesh is valid")
                     self.debug_window.log_info("Mesh repair completed successfully - validation passed")
                     messagebox.showinfo("Success", "Mesh repaired successfully!")
+                    
+                    # Update slider labels with repaired mesh info
+                    if self.simplify_slider_var:
+                        self.simplify_slider_var.set(0.0)
+                        self._on_slider_change("0")
                 else:
                     self._update_status("Repair complete\nWarnings present")
                     warning_count = len(validation.get("warnings", []))
@@ -556,6 +730,207 @@ class TransmuteApp:
         except Exception as e:
             self.debug_window.log_error(f"Error during mesh repair: {str(e)}")
             self.debug_window.end_operation("repair_mesh")
+            raise
+    
+    def auto_simplify_mesh(self):
+        """Automatically simplify mesh for STEP conversion"""
+        try:
+            if not self.repaired_mesh:
+                self.debug_window.log_warning("Auto-simplify attempted without repaired mesh")
+                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                return
+            
+            self.debug_window.start_operation("auto_simplify")
+            self.debug_window.log_info("Starting automatic mesh simplification...")
+            self._update_status("Auto-simplifying mesh...")
+            self._reset_progress()
+            
+            # Load mesh into simplifier
+            self.simplifier.load_mesh(self.repaired_mesh)
+            
+            # Perform auto-simplification
+            success, message, was_simplified = self.simplifier.auto_simplify_for_step()
+            
+            if success:
+                if was_simplified:
+                    self.repaired_mesh = self.simplifier.get_current_mesh()
+                    self._update_status(f"Auto-simplified: {message}")
+                    self.debug_window.log_info(f"Auto-simplification successful: {message}")
+                    messagebox.showinfo("Auto-Simplified", message)
+                else:
+                    self._update_status("Mesh complexity OK - no simplification needed")
+                    self.debug_window.log_info("Auto-simplification: No changes needed")
+                    messagebox.showinfo("No Changes", "Mesh complexity is acceptable for STEP conversion")
+            else:
+                self._update_status("Auto-simplification failed")
+                self.debug_window.log_error(f"Auto-simplification failed: {message}")
+                messagebox.showerror("Error", f"Auto-simplification failed: {message}")
+            
+            self.debug_window.end_operation("auto_simplify")
+        except Exception as e:
+            self.debug_window.log_error(f"Error during auto-simplification: {str(e)}")
+            self.debug_window.end_operation("auto_simplify")
+            raise
+    
+    def simplify_by_percentage(self, percentage):
+        """Simplify mesh by percentage reduction"""
+        try:
+            if not self.repaired_mesh:
+                self.debug_window.log_warning("Simplify attempted without repaired mesh")
+                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                return
+            
+            self.debug_window.start_operation("simplify_percentage")
+            self.debug_window.log_info(f"Starting {percentage*100:.0f}% mesh simplification...")
+            self._update_status(f"Simplifying to {percentage*100:.0f}%...")
+            self._reset_progress()
+            
+            # Load mesh into simplifier
+            self.simplifier.load_mesh(self.repaired_mesh)
+            
+            # Perform simplification
+            success, message = self.simplifier.simplify_by_percentage(percentage)
+            
+            if success:
+                self.repaired_mesh = self.simplifier.get_current_mesh()
+                self._update_status(f"Simplified: {message}")
+                self.debug_window.log_info(f"Percentage simplification successful: {message}")
+                messagebox.showinfo("Simplified", message)
+            else:
+                self._update_status("Simplification failed")
+                self.debug_window.log_error(f"Percentage simplification failed: {message}")
+                messagebox.showerror("Error", f"Simplification failed: {message}")
+            
+            self.debug_window.end_operation("simplify_percentage")
+        except Exception as e:
+            self.debug_window.log_error(f"Error during percentage simplification: {str(e)}")
+            self.debug_window.end_operation("simplify_percentage")
+            raise
+    
+    def simplify_by_face_count(self, target_faces):
+        """Simplify mesh to specific face count"""
+        try:
+            if not self.repaired_mesh:
+                self.debug_window.log_warning("Simplify attempted without repaired mesh")
+                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                return
+            
+            self.debug_window.start_operation("simplify_faces")
+            self.debug_window.log_info(f"Starting simplification to {target_faces} faces...")
+            self._update_status(f"Simplifying to {target_faces} faces...")
+            self._reset_progress()
+            
+            # Load mesh into simplifier
+            self.simplifier.load_mesh(self.repaired_mesh)
+            
+            # Perform simplification
+            success, message = self.simplifier.simplify_by_face_count(target_faces)
+            
+            if success:
+                self.repaired_mesh = self.simplifier.get_current_mesh()
+                self._update_status(f"Simplified: {message}")
+                self.debug_window.log_info(f"Face count simplification successful: {message}")
+                messagebox.showinfo("Simplified", message)
+            else:
+                self._update_status("Simplification failed")
+                self.debug_window.log_error(f"Face count simplification failed: {message}")
+                messagebox.showerror("Error", f"Simplification failed: {message}")
+            
+            self.debug_window.end_operation("simplify_faces")
+        except Exception as e:
+            self.debug_window.log_error(f"Error during face count simplification: {str(e)}")
+            self.debug_window.end_operation("simplify_faces")
+            raise
+    
+    def reset_mesh(self):
+        """Reset mesh to post-repair state"""
+        try:
+            if not self.repaired_mesh:
+                self.debug_window.log_warning("Reset attempted without repaired mesh")
+                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                return
+            
+            self.debug_window.start_operation("reset_mesh")
+            self.debug_window.log_info("Resetting mesh to post-repair state...")
+            
+            # Reset simplifier to original repaired mesh
+            self.simplifier.reset()
+            self.repaired_mesh = self.simplifier.get_current_mesh()
+            
+            original_stats = self.simplifier.get_original_stats()
+            self._update_status(f"Mesh reset to {original_stats.get('faces', 0)} faces")
+            self.debug_window.log_info(f"Mesh reset to {original_stats.get('faces', 0)} faces")
+            messagebox.showinfo("Reset", f"Mesh reset to {original_stats.get('faces', 0)} faces")
+            
+            self.debug_window.end_operation("reset_mesh")
+        except Exception as e:
+            self.debug_window.log_error(f"Error during mesh reset: {str(e)}")
+            self.debug_window.end_operation("reset_mesh")
+            raise
+    
+    def _on_slider_change(self, value):
+        """Update labels when slider value changes"""
+        try:
+            if not self.repaired_mesh:
+                return
+            
+            reduction_percent = float(value)
+            current_faces = len(self.repaired_mesh.faces)
+            target_faces = max(4, int(current_faces * (1.0 - reduction_percent / 100.0)))
+            
+            # Update labels
+            self.current_faces_label.config(text=f"Current: {current_faces:,} faces")
+            self.target_faces_label.config(text=f"Target: {target_faces:,} faces")
+            self.reduction_percent_label.config(text=f"Reduction: {reduction_percent:.0f}%")
+            
+        except Exception as e:
+            # Silently handle errors during slider updates
+            pass
+    
+    def apply_slider_simplification(self):
+        """Apply simplification based on current slider value"""
+        try:
+            if not self.repaired_mesh:
+                self.debug_window.log_warning("Slider simplify attempted without repaired mesh")
+                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                return
+            
+            reduction_percent = self.simplify_slider_var.get()
+            if reduction_percent <= 0:
+                messagebox.showinfo("No Change", "Please set a reduction percentage greater than 0%")
+                return
+            
+            percentage = 1.0 - (reduction_percent / 100.0)
+            
+            self.debug_window.start_operation("slider_simplify")
+            self.debug_window.log_info(f"Starting {reduction_percent:.0f}% slider simplification...")
+            self._update_status(f"Simplifying to {reduction_percent:.0f}% reduction...")
+            self._reset_progress()
+            
+            # Load mesh into simplifier
+            self.simplifier.load_mesh(self.repaired_mesh)
+            
+            # Perform simplification
+            success, message = self.simplifier.simplify_by_percentage(percentage)
+            
+            if success:
+                self.repaired_mesh = self.simplifier.get_current_mesh()
+                self._update_status(f"Simplified: {message}")
+                self.debug_window.log_info(f"Slider simplification successful: {message}")
+                messagebox.showinfo("Simplified", message)
+                
+                # Update slider labels with new current face count
+                self._on_slider_change(str(reduction_percent))
+                
+            else:
+                self._update_status("Simplification failed")
+                self.debug_window.log_error(f"Slider simplification failed: {message}")
+                messagebox.showerror("Error", f"Simplification failed: {message}")
+            
+            self.debug_window.end_operation("slider_simplify")
+        except Exception as e:
+            self.debug_window.log_error(f"Error during slider simplification: {str(e)}")
+            self.debug_window.end_operation("slider_simplify")
             raise
     
     def export_files(self):
@@ -598,11 +973,17 @@ class TransmuteApp:
                     step_path = output_path / f"{base_name}.step"
                     self.debug_window.log_info(f"Exporting STEP: {step_path.name}")
                     self.converter.load_mesh(self.repaired_mesh)
-                    if self.converter.convert_to_step(str(step_path)):
+                    success, error_msg = self.converter.convert_to_step(str(step_path))
+                    if success:
                         success_count += 1
                         self.debug_window.log_info("STEP export successful")
                     else:
-                        self.debug_window.log_error("STEP export failed")
+                        self.debug_window.log_error(f"STEP export failed: {error_msg}")
+                        # Show detailed error to user
+                        messagebox.showerror(
+                            "STEP Export Failed",
+                            f"STEP export failed:\n{error_msg}\n\nSTL export succeeded."
+                        )
                 else:
                     self.debug_window.log_warning("FreeCAD not available for STEP export")
                     messagebox.showwarning(

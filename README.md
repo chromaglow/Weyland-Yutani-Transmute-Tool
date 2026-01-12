@@ -160,7 +160,13 @@ This script will:
 **Fix**: tkinter should be included with Python on Windows
 
 ### STEP export not working
-**Fix**: Install FreeCAD from https://www.freecadweb.org/
+**Issue**: "FreeCAD not available - cannot convert to STEP"
+
+**Solutions**:
+1. **Install FreeCAD**: Download from https://www.freecadweb.org/
+2. **Run as Administrator**: Right-click the application and "Run as administrator"  
+3. **Check PATH**: Ensure FreeCAD's `bin` folder is in your system PATH
+4. **Automatic Detection**: The program searches common FreeCAD installation locations
 
 ---
 

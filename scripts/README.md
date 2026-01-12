@@ -11,6 +11,7 @@ This directory contains utility scripts for the Weyland-Yutani Transmute Tool.
 ### Maintenance & Organization
 - **organize_project.py** - Organize project files into proper directories
 - **cleanup_update.bat** - Comprehensive cleanup and update script (in root)
+- **test_freecad.py** - Test FreeCAD detection and troubleshoot integration issues
 
 ## Usage
 
