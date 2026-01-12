@@ -6,12 +6,21 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox, scrolledtext
 from pathlib import Path
 import sys
+import os
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core import MeshAnalyzer, MeshRepairer, StepConverter, MeshValidator, MeshSimplifier
 from ui.debug_window import DebugWindow, DebugExceptionHandler
+
+# Try to import pygame for audio (optional)
+try:
+    import pygame
+    AUDIO_AVAILABLE = True
+except ImportError:
+    AUDIO_AVAILABLE = False
+    print("Warning: pygame not available - audio features disabled")
 
 
 class TransmuteApp:
@@ -31,7 +40,7 @@ class TransmuteApp:
     def __init__(self, root):
         self.root = root
         self.root.title("🏢 Weyland-Yutani Transmute Tool")
-        self.root.geometry("900x700")
+        self.root.geometry("1200x950")  # Increased width to ensure audio controls fit
         self.root.configure(bg=self.DOS_BG)
         
         # Initialize debug window
@@ -60,12 +69,42 @@ class TransmuteApp:
         self.simplify_slider = None
         self.simplify_slider_var = None
         
+        # Audio state
+        self.audio_enabled = AUDIO_AVAILABLE
+        self.audio_muted = False
+        self.audio_volume = 0.5  # 50% volume
+        self.audio_playing = False
+        self.audio_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "Spybreak!Short One Propellerheads.mp3")
+        
+        # Initialize audio if available
+        if self.audio_enabled:
+            self._init_audio()
+        
         self._create_ui()
+        self.root.update()  # Force UI update to ensure all widgets are displayed
         self._redirect_console()
         self._setup_keyboard_shortcuts()
         
+        # Set up window close handler
+        self.root.protocol("WM_DELETE_WINDOW", self._on_window_close)
+        
         # Log startup
         self.debug_window.log_info("Application initialized successfully")
+    
+    def _init_audio(self):
+        """Initialize pygame audio system"""
+        try:
+            pygame.mixer.init()
+            if os.path.exists(self.audio_file):
+                pygame.mixer.music.load(self.audio_file)
+                pygame.mixer.music.set_volume(self.audio_volume)
+                self.debug_window.log_info("Audio system initialized")
+            else:
+                self.debug_window.log_warning(f"Audio file not found: {self.audio_file}")
+                self.audio_enabled = False
+        except Exception as e:
+            self.debug_window.log_error(f"Failed to initialize audio: {e}")
+            self.audio_enabled = False
     
     def _create_ui(self):
         """Create the user interface"""
@@ -74,8 +113,12 @@ class TransmuteApp:
         header_frame = tk.Frame(self.root, bg=self.DOS_BG, padx=10, pady=10)
         header_frame.pack(fill=tk.X)
         
+        # Title section (left side)
+        title_frame = tk.Frame(header_frame, bg=self.DOS_BG)
+        title_frame.pack(side=tk.LEFT)
+        
         title_label = tk.Label(
-            header_frame,
+            title_frame,
             text="WEYLAND-YUTANI TRANSMUTE TOOL",
             font=self.DOS_FONT_TITLE,
             bg=self.DOS_BG,
@@ -84,13 +127,64 @@ class TransmuteApp:
         title_label.pack()
         
         subtitle_label = tk.Label(
-            header_frame,
+            title_frame,
             text='"Building Better Worlds... One Mesh at a Time"',
             font=self.DOS_FONT,
             bg=self.DOS_BG,
             fg=self.DOS_FG_DIM
         )
         subtitle_label.pack()
+        
+        # Audio controls (right side)
+        if self.audio_enabled:
+            audio_frame = tk.Frame(header_frame, bg=self.DOS_BG)
+            audio_frame.pack(side=tk.RIGHT, padx=(20,0))
+            
+            # Mute button
+            self.mute_button = tk.Button(
+                audio_frame,
+                text="[🔊 MUTE]",
+                command=self.toggle_mute,
+                bg=self.DOS_BG,
+                fg=self.DOS_FG,
+                font=self.DOS_FONT,
+                activebackground=self.DOS_FG,
+                activeforeground=self.DOS_BG,
+                relief=tk.RAISED,
+                bd=2,
+                highlightthickness=1,
+                highlightbackground=self.DOS_FG
+            )
+            self.mute_button.pack(side=tk.LEFT, padx=(0,5))
+            
+            # Volume slider
+            volume_label = tk.Label(
+                audio_frame,
+                text="VOL:",
+                bg=self.DOS_BG,
+                fg=self.DOS_FG_DIM,
+                font=self.DOS_FONT
+            )
+            volume_label.pack(side=tk.LEFT)
+            
+            self.volume_var = tk.DoubleVar(value=self.audio_volume * 100)
+            self.volume_slider = tk.Scale(
+                audio_frame,
+                from_=0,
+                to=100,
+                resolution=5,
+                orient=tk.HORIZONTAL,
+                variable=self.volume_var,
+                command=self._on_volume_change,
+                bg=self.DOS_BG,
+                fg=self.DOS_FG,
+                troughcolor=self.DOS_BG,
+                activebackground=self.DOS_FG,
+                highlightthickness=0,
+                font=self.DOS_FONT,
+                length=100
+            )
+            self.volume_slider.pack(side=tk.LEFT)
         
         # Main container
         main_frame = tk.Frame(self.root, bg=self.DOS_BG, padx=10, pady=10)
@@ -126,14 +220,14 @@ class TransmuteApp:
         tk.Button(
             file_frame,
             text="[ LOAD STL FILE ]",
-            command=self.load_file,
+            command=self._load_file_with_audio,
             bg=self.DOS_BG,
             fg=self.DOS_FG,
             font=self.DOS_FONT_BOLD,
             activebackground=self.DOS_FG,
             activeforeground=self.DOS_BG,
-            relief=tk.FLAT,
-            bd=2,
+            relief=tk.RAISED,
+            bd=3,
             highlightthickness=1,
             highlightbackground=self.DOS_FG
         ).pack(pady=5)
@@ -153,14 +247,14 @@ class TransmuteApp:
         tk.Button(
             analysis_frame,
             text="[ ANALYZE MESH ]",
-            command=self.analyze_mesh,
+            command=self._analyze_mesh_with_audio,
             bg=self.DOS_BG,
             fg=self.DOS_FG,
             font=self.DOS_FONT_BOLD,
             activebackground=self.DOS_FG,
             activeforeground=self.DOS_BG,
-            relief=tk.FLAT,
-            bd=2,
+            relief=tk.RAISED,
+            bd=3,
             highlightthickness=1,
             highlightbackground=self.DOS_FG
         ).pack(fill=tk.X, pady=2)
@@ -180,14 +274,14 @@ class TransmuteApp:
         tk.Button(
             repair_frame,
             text="[ REPAIR MESH ]",
-            command=self.repair_mesh,
+            command=self._repair_mesh_with_audio,
             bg=self.DOS_BG,
             fg=self.DOS_FG,
             font=self.DOS_FONT_BOLD,
             activebackground=self.DOS_FG,
             activeforeground=self.DOS_BG,
-            relief=tk.FLAT,
-            bd=2,
+            relief=tk.RAISED,
+            bd=3,
             highlightthickness=1,
             highlightbackground=self.DOS_FG
         ).pack(fill=tk.X, pady=2)
@@ -208,14 +302,14 @@ class TransmuteApp:
         tk.Button(
             simplify_frame,
             text="[ AUTO SIMPLIFY ]",
-            command=self.auto_simplify_mesh,
+            command=self._auto_simplify_mesh_with_audio,
             bg=self.DOS_BG,
             fg=self.DOS_FG,
             font=self.DOS_FONT_BOLD,
             activebackground=self.DOS_FG,
             activeforeground=self.DOS_BG,
-            relief=tk.FLAT,
-            bd=2,
+            relief=tk.RAISED,
+            bd=3,
             highlightthickness=1,
             highlightbackground=self.DOS_FG
         ).pack(fill=tk.X, pady=2)
@@ -275,7 +369,7 @@ class TransmuteApp:
             slider_frame,
             from_=0,
             to=95,
-            resolution=5,
+            resolution=1,
             orient=tk.HORIZONTAL,
             variable=self.simplify_slider_var,
             command=self._on_slider_change,
@@ -292,14 +386,14 @@ class TransmuteApp:
         tk.Button(
             slider_frame,
             text="[APPLY]",
-            command=self.apply_slider_simplification,
+            command=self._apply_slider_simplification_with_audio,
             bg=self.DOS_BG,
             fg=self.DOS_FG,
             font=self.DOS_FONT,
             activebackground=self.DOS_FG,
             activeforeground=self.DOS_BG,
-            relief=tk.FLAT,
-            bd=1,
+            relief=tk.RAISED,
+            bd=2,
             highlightthickness=1,
             highlightbackground=self.DOS_FG,
             width=8
@@ -322,14 +416,14 @@ class TransmuteApp:
             tk.Button(
                 faces_buttons_frame,
                 text=f"[{faces}]",
-                command=lambda f=faces: self.simplify_by_face_count(f),
+                command=lambda f=faces: self._simplify_by_face_count_with_audio(f),
                 bg=self.DOS_BG,
                 fg=self.DOS_FG,
                 font=self.DOS_FONT,
                 activebackground=self.DOS_FG,
                 activeforeground=self.DOS_BG,
-                relief=tk.FLAT,
-                bd=1,
+                relief=tk.RAISED,
+                bd=2,
                 highlightthickness=1,
                 highlightbackground=self.DOS_FG,
                 width=8
@@ -339,14 +433,14 @@ class TransmuteApp:
         tk.Button(
             simplify_frame,
             text="[ RESET MESH ]",
-            command=self.reset_mesh,
+            command=self._reset_mesh_with_audio,
             bg=self.DOS_BG,
             fg=self.DOS_FG,
             font=self.DOS_FONT_BOLD,
             activebackground=self.DOS_FG,
             activeforeground=self.DOS_BG,
-            relief=tk.FLAT,
-            bd=2,
+            relief=tk.RAISED,
+            bd=3,
             highlightthickness=1,
             highlightbackground=self.DOS_FG
         ).pack(fill=tk.X, pady=5)
@@ -393,14 +487,14 @@ class TransmuteApp:
         tk.Button(
             export_frame,
             text="[ EXPORT FILES ]",
-            command=self.export_files,
+            command=self._export_files_with_audio,
             bg=self.DOS_BG,
             fg=self.DOS_FG,
             font=self.DOS_FONT_BOLD,
             activebackground=self.DOS_FG,
             activeforeground=self.DOS_BG,
-            relief=tk.FLAT,
-            bd=2,
+            relief=tk.RAISED,
+            bd=3,
             highlightthickness=1,
             highlightbackground=self.DOS_FG
         ).pack(fill=tk.X, pady=5)
@@ -492,7 +586,7 @@ class TransmuteApp:
         tk.Button(
             console_frame,
             text="[ CLEAR CONSOLE ]",
-            command=self.clear_console,
+            command=self._clear_console_with_audio,
             bg=self.DOS_BG,
             fg=self.DOS_FG,
             font=self.DOS_FONT_BOLD,
@@ -634,7 +728,7 @@ class TransmuteApp:
         try:
             if not self.current_file:
                 self.debug_window.log_warning("Analyze attempted without file loaded")
-                messagebox.showwarning("No File", "Please load an STL file first")
+                self._show_dos_message("NO FILE", "Please load an STL file first", "warning")
                 return
             
             self.debug_window.start_operation("analyze_mesh")
@@ -660,7 +754,7 @@ class TransmuteApp:
             else:
                 self._update_status("Analysis failed")
                 self.debug_window.log_error("Failed to load mesh for analysis")
-                messagebox.showerror("Error", "Failed to analyze mesh")
+                self._show_dos_message("ERROR", "Failed to analyze mesh", "error")
             
             self.debug_window.end_operation("analyze_mesh")
         except Exception as e:
@@ -673,12 +767,12 @@ class TransmuteApp:
         try:
             if not self.current_file:
                 self.debug_window.log_warning("Repair attempted without file loaded")
-                messagebox.showwarning("No File", "Please load an STL file first")
+                self._show_dos_message("NO FILE", "Please load an STL file first", "warning")
                 return
             
             if not self.analysis_results:
                 self.debug_window.log_warning("Repair attempted without analysis")
-                messagebox.showinfo("Analyze First", "Please analyze the mesh first")
+                self._show_dos_message("ANALYZE FIRST", "Please analyze the mesh first", "warning")
                 return
             
             self.debug_window.start_operation("repair_mesh")
@@ -707,7 +801,7 @@ class TransmuteApp:
                 if validation["is_valid"]:
                     self._update_status("Repair successful!\nMesh is valid")
                     self.debug_window.log_info("Mesh repair completed successfully - validation passed")
-                    messagebox.showinfo("Success", "Mesh repaired successfully!")
+                    self._show_dos_message("SUCCESS", "Mesh repaired successfully!", "success")
                     
                     # Update slider labels with repaired mesh info
                     if self.simplify_slider_var:
@@ -717,14 +811,11 @@ class TransmuteApp:
                     self._update_status("Repair complete\nWarnings present")
                     warning_count = len(validation.get("warnings", []))
                     self.debug_window.log_warning(f"Mesh repaired but has {warning_count} validation warnings")
-                    messagebox.showwarning(
-                        "Partial Success",
-                        "Mesh repaired but validation warnings present"
-                    )
+                    self._show_dos_message("PARTIAL SUCCESS", "Mesh repaired but validation warnings present", "warning")
             else:
                 self._update_status("Repair failed")
                 self.debug_window.log_error("No mesh available for repair")
-                messagebox.showerror("Error", "Failed to repair mesh")
+                self._show_dos_message("ERROR", "Failed to repair mesh", "error")
             
             self.debug_window.end_operation("repair_mesh")
         except Exception as e:
@@ -737,7 +828,7 @@ class TransmuteApp:
         try:
             if not self.repaired_mesh:
                 self.debug_window.log_warning("Auto-simplify attempted without repaired mesh")
-                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                self._show_dos_message("NO MESH", "Please repair the mesh first", "warning")
                 return
             
             self.debug_window.start_operation("auto_simplify")
@@ -756,15 +847,15 @@ class TransmuteApp:
                     self.repaired_mesh = self.simplifier.get_current_mesh()
                     self._update_status(f"Auto-simplified: {message}")
                     self.debug_window.log_info(f"Auto-simplification successful: {message}")
-                    messagebox.showinfo("Auto-Simplified", message)
+                    self._show_dos_message("AUTO-SIMPLIFIED", message, "success")
                 else:
                     self._update_status("Mesh complexity OK - no simplification needed")
                     self.debug_window.log_info("Auto-simplification: No changes needed")
-                    messagebox.showinfo("No Changes", "Mesh complexity is acceptable for STEP conversion")
+                    self._show_dos_message("NO CHANGES", "Mesh complexity is acceptable for STEP conversion", "info")
             else:
                 self._update_status("Auto-simplification failed")
                 self.debug_window.log_error(f"Auto-simplification failed: {message}")
-                messagebox.showerror("Error", f"Auto-simplification failed: {message}")
+                self._show_dos_message("ERROR", f"Auto-simplification failed: {message}", "error")
             
             self.debug_window.end_operation("auto_simplify")
         except Exception as e:
@@ -777,7 +868,7 @@ class TransmuteApp:
         try:
             if not self.repaired_mesh:
                 self.debug_window.log_warning("Simplify attempted without repaired mesh")
-                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                self._show_dos_message("NO MESH", "Please repair the mesh first", "warning")
                 return
             
             self.debug_window.start_operation("simplify_percentage")
@@ -795,11 +886,11 @@ class TransmuteApp:
                 self.repaired_mesh = self.simplifier.get_current_mesh()
                 self._update_status(f"Simplified: {message}")
                 self.debug_window.log_info(f"Percentage simplification successful: {message}")
-                messagebox.showinfo("Simplified", message)
+                self._show_dos_message("SIMPLIFIED", message, "success")
             else:
                 self._update_status("Simplification failed")
                 self.debug_window.log_error(f"Percentage simplification failed: {message}")
-                messagebox.showerror("Error", f"Simplification failed: {message}")
+                self._show_dos_message("ERROR", f"Simplification failed: {message}", "error")
             
             self.debug_window.end_operation("simplify_percentage")
         except Exception as e:
@@ -812,7 +903,7 @@ class TransmuteApp:
         try:
             if not self.repaired_mesh:
                 self.debug_window.log_warning("Simplify attempted without repaired mesh")
-                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                self._show_dos_message("NO MESH", "Please repair the mesh first", "warning")
                 return
             
             self.debug_window.start_operation("simplify_faces")
@@ -830,11 +921,11 @@ class TransmuteApp:
                 self.repaired_mesh = self.simplifier.get_current_mesh()
                 self._update_status(f"Simplified: {message}")
                 self.debug_window.log_info(f"Face count simplification successful: {message}")
-                messagebox.showinfo("Simplified", message)
+                self._show_dos_message("SIMPLIFIED", message, "success")
             else:
                 self._update_status("Simplification failed")
                 self.debug_window.log_error(f"Face count simplification failed: {message}")
-                messagebox.showerror("Error", f"Simplification failed: {message}")
+                self._show_dos_message("ERROR", f"Simplification failed: {message}", "error")
             
             self.debug_window.end_operation("simplify_faces")
         except Exception as e:
@@ -847,7 +938,7 @@ class TransmuteApp:
         try:
             if not self.repaired_mesh:
                 self.debug_window.log_warning("Reset attempted without repaired mesh")
-                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                self._show_dos_message("NO MESH", "Please repair the mesh first", "warning")
                 return
             
             self.debug_window.start_operation("reset_mesh")
@@ -860,7 +951,7 @@ class TransmuteApp:
             original_stats = self.simplifier.get_original_stats()
             self._update_status(f"Mesh reset to {original_stats.get('faces', 0)} faces")
             self.debug_window.log_info(f"Mesh reset to {original_stats.get('faces', 0)} faces")
-            messagebox.showinfo("Reset", f"Mesh reset to {original_stats.get('faces', 0)} faces")
+            self._show_dos_message("RESET", f"Mesh reset to {original_stats.get('faces', 0)} faces", "info")
             
             self.debug_window.end_operation("reset_mesh")
         except Exception as e:
@@ -892,12 +983,12 @@ class TransmuteApp:
         try:
             if not self.repaired_mesh:
                 self.debug_window.log_warning("Slider simplify attempted without repaired mesh")
-                messagebox.showwarning("No Mesh", "Please repair the mesh first")
+                self._show_dos_message("NO MESH", "Please repair the mesh first", "warning")
                 return
             
             reduction_percent = self.simplify_slider_var.get()
             if reduction_percent <= 0:
-                messagebox.showinfo("No Change", "Please set a reduction percentage greater than 0%")
+                self._show_dos_message("NO CHANGE", "Please set a reduction percentage greater than 0%", "info")
                 return
             
             percentage = 1.0 - (reduction_percent / 100.0)
@@ -917,7 +1008,7 @@ class TransmuteApp:
                 self.repaired_mesh = self.simplifier.get_current_mesh()
                 self._update_status(f"Simplified: {message}")
                 self.debug_window.log_info(f"Slider simplification successful: {message}")
-                messagebox.showinfo("Simplified", message)
+                self._show_dos_message("SIMPLIFIED", message, "success")
                 
                 # Update slider labels with new current face count
                 self._on_slider_change(str(reduction_percent))
@@ -925,7 +1016,7 @@ class TransmuteApp:
             else:
                 self._update_status("Simplification failed")
                 self.debug_window.log_error(f"Slider simplification failed: {message}")
-                messagebox.showerror("Error", f"Simplification failed: {message}")
+                self._show_dos_message("ERROR", f"Simplification failed: {message}", "error")
             
             self.debug_window.end_operation("slider_simplify")
         except Exception as e:
@@ -938,7 +1029,7 @@ class TransmuteApp:
         try:
             if not self.repaired_mesh:
                 self.debug_window.log_warning("Export attempted without repaired mesh")
-                messagebox.showwarning("No Repair", "Please repair the mesh first")
+                self._show_dos_message("NO REPAIR", "Please repair the mesh first", "warning")
                 return
             
             self.debug_window.start_operation("export_files")
@@ -980,28 +1071,325 @@ class TransmuteApp:
                     else:
                         self.debug_window.log_error(f"STEP export failed: {error_msg}")
                         # Show detailed error to user
-                        messagebox.showerror(
-                            "STEP Export Failed",
-                            f"STEP export failed:\n{error_msg}\n\nSTL export succeeded."
-                        )
+                        self._show_dos_message("STEP EXPORT FAILED", f"STEP export failed:\n{error_msg}\n\nSTL export succeeded.", "error")
                 else:
                     self.debug_window.log_warning("FreeCAD not available for STEP export")
-                    messagebox.showwarning(
-                        "STEP Unavailable",
-                        "FreeCAD not installed. STEP export unavailable."
-                    )
+                    self._show_dos_message("STEP UNAVAILABLE", "FreeCAD not installed. STEP export unavailable.", "warning")
             
             if success_count > 0:
                 self._update_status(f"Export complete!\n{success_count} file(s) saved")
                 self.debug_window.log_info(f"Export completed successfully - {success_count} file(s) saved")
-                messagebox.showinfo("Success", f"Exported {success_count} file(s)")
+                self._show_dos_message("SUCCESS", f"Exported {success_count} file(s)", "success")
             else:
                 self._update_status("Export failed")
                 self.debug_window.log_error("All export operations failed")
-                messagebox.showerror("Error", "Export failed")
+                self._show_dos_message("ERROR", "Export failed", "error")
             
             self.debug_window.end_operation("export_files")
         except Exception as e:
             self.debug_window.log_error(f"Error during export: {str(e)}")
             self.debug_window.end_operation("export_files")
             raise
+    
+    def toggle_mute(self):
+        """Toggle audio mute state"""
+        if not self.audio_enabled:
+            return
+        
+        self.audio_muted = not self.audio_muted
+        
+        if self.audio_muted:
+            pygame.mixer.music.set_volume(0.0)
+            self.mute_button.config(text="[🔇 UNMUTE]")
+            self.debug_window.log_info("Audio muted")
+        else:
+            pygame.mixer.music.set_volume(self.audio_volume)
+            self.mute_button.config(text="[🔊 MUTE]")
+            self.debug_window.log_info("Audio unmuted")
+    
+    def _on_volume_change(self, value):
+        """Handle volume slider changes"""
+        if not self.audio_enabled:
+            return
+        
+        self.audio_volume = float(value) / 100.0
+        
+        if not self.audio_muted:
+            pygame.mixer.music.set_volume(self.audio_volume)
+        
+        self.debug_window.log_info(f"Volume set to {int(float(value))}%")
+    
+    def _play_audio_on_interaction(self):
+        """Play audio when user interacts with the application"""
+        if not self.audio_enabled or self.audio_muted:
+            return
+        
+        try:
+            if not self.audio_playing:
+                pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+                self.audio_playing = True
+                self.debug_window.log_info("Audio playback started")
+        except Exception as e:
+            self.debug_window.log_error(f"Failed to play audio: {e}")
+            self.audio_enabled = False
+    
+    # Audio-enabled wrapper functions for buttons
+    def _load_file_with_audio(self):
+        self._play_audio_on_interaction()
+        self._show_progress_dialog("Loading File")
+        self.load_file()
+    
+    def _analyze_mesh_with_audio(self):
+        self._play_audio_on_interaction()
+        self._show_progress_dialog("Analyzing Mesh")
+        self.analyze_mesh()
+    
+    def _repair_mesh_with_audio(self):
+        self._play_audio_on_interaction()
+        self._show_progress_dialog("Repairing Mesh")
+        self.repair_mesh()
+    
+    def _auto_simplify_mesh_with_audio(self):
+        self._play_audio_on_interaction()
+        self._show_progress_dialog("Auto Simplifying")
+        self.auto_simplify_mesh()
+    
+    def _apply_slider_simplification_with_audio(self):
+        self._play_audio_on_interaction()
+        self._show_progress_dialog("Applying Simplification")
+        self.apply_slider_simplification()
+    
+    def _simplify_by_face_count_with_audio(self, faces):
+        self._play_audio_on_interaction()
+        self._show_progress_dialog(f"Reducing to {faces} Faces")
+        self.simplify_by_face_count(faces)
+    
+    def _reset_mesh_with_audio(self):
+        self._play_audio_on_interaction()
+        self._show_progress_dialog("Resetting Mesh")
+        self.reset_mesh()
+    
+    def _export_files_with_audio(self):
+        self._play_audio_on_interaction()
+        self._show_progress_dialog("Exporting Files")
+        self.export_files()
+    
+    def _clear_console_with_audio(self):
+        self._play_audio_on_interaction()
+        self._show_progress_dialog("Clearing Console")
+        self.clear_console()
+    
+    def _on_window_close(self):
+        """Handle window close event"""
+        try:
+            # Stop audio if playing
+            if self.audio_enabled and pygame.mixer.music.get_busy():
+                pygame.mixer.music.stop()
+            
+            # Clean up debug window
+            if self.debug_window:
+                self.debug_window.monitoring = False
+            
+            # Destroy the window and quit
+            self.root.quit()
+            self.root.destroy()
+            
+        except Exception as e:
+            # Force quit if cleanup fails
+            self.root.quit()
+            self.root.destroy()
+    
+    def _show_progress_dialog(self, operation_name, duration=3.5):
+        """Show a DOS-style progress dialog with spinning animation"""
+        import threading
+        import time
+        
+        # Create progress dialog
+        progress_dialog = tk.Toplevel(self.root)
+        progress_dialog.title("PROCESSING...")
+        progress_dialog.geometry("400x150")
+        progress_dialog.configure(bg=self.DOS_BG)
+        progress_dialog.resizable(False, False)
+        progress_dialog.transient(self.root)
+        progress_dialog.grab_set()
+        
+        # Center the dialog
+        progress_dialog.geometry("+{}+{}".format(
+            self.root.winfo_x() + (self.root.winfo_width() // 2) - 200,
+            self.root.winfo_y() + (self.root.winfo_height() // 2) - 75
+        ))
+        
+        # Title
+        title_label = tk.Label(
+            progress_dialog,
+            text=f"⚙️  {operation_name.upper()}",
+            font=self.DOS_FONT_BOLD,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG
+        )
+        title_label.pack(pady=(20, 10))
+        
+        # Progress bar frame
+        progress_frame = tk.Frame(progress_dialog, bg=self.DOS_BG)
+        progress_frame.pack(fill=tk.X, padx=20, pady=(0, 10))
+        
+        # Progress bar
+        self.progress_var = tk.DoubleVar()
+        progress_bar = tk.Canvas(
+            progress_frame,
+            height=20,
+            bg=self.DOS_BG,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG
+        )
+        progress_bar.pack(fill=tk.X)
+        
+        # Status text
+        status_label = tk.Label(
+            progress_dialog,
+            text="INITIALIZING...",
+            font=self.DOS_FONT,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG_DIM
+        )
+        status_label.pack(pady=(0, 20))
+        
+        # Spinning animation characters
+        spin_chars = ["|", "/", "-", "\\"]
+        spin_index = 0
+        
+        def update_progress():
+            """Update progress bar and spinning animation"""
+            nonlocal spin_index
+            start_time = time.time()
+            
+            while time.time() - start_time < duration:
+                elapsed = time.time() - start_time
+                progress = min(elapsed / duration, 1.0)
+                
+                # Update progress bar
+                self.progress_var.set(progress * 100)
+                progress_bar.delete("all")
+                progress_bar.create_rectangle(
+                    2, 2, 
+                    2 + (progress_bar.winfo_width() - 4) * progress, 
+                    18,
+                    fill=self.DOS_FG,
+                    outline=self.DOS_FG
+                )
+                
+                # Update spinning animation
+                spin_char = spin_chars[spin_index % len(spin_chars)]
+                status_label.config(text=f"PROCESSING {spin_char}")
+                spin_index += 1
+                
+                # Update dialog
+                progress_dialog.update()
+                time.sleep(0.1)
+            
+            # Final update
+            self.progress_var.set(100)
+            progress_bar.delete("all")
+            progress_bar.create_rectangle(
+                2, 2, progress_bar.winfo_width() - 2, 18,
+                fill=self.DOS_FG,
+                outline=self.DOS_FG
+            )
+            status_label.config(text="COMPLETE ✓")
+            progress_dialog.update()
+            time.sleep(0.3)  # Brief pause to show completion
+            
+            # Close dialog
+            progress_dialog.destroy()
+        
+        # Start progress animation in separate thread
+        progress_thread = threading.Thread(target=update_progress, daemon=True)
+        progress_thread.start()
+        
+        # Wait for completion (but allow dialog to be modal)
+        self.root.wait_window(progress_dialog)
+    
+    def _show_dos_message(self, title, message, message_type="info"):
+        """Show a DOS-themed message dialog"""
+        # Create message dialog
+        message_dialog = tk.Toplevel(self.root)
+        message_dialog.title(f"[{title.upper()}]")
+        message_dialog.geometry("450x200")
+        message_dialog.configure(bg=self.DOS_BG)
+        message_dialog.resizable(False, False)
+        message_dialog.transient(self.root)
+        message_dialog.grab_set()
+        
+        # Center the dialog
+        message_dialog.geometry("+{}+{}".format(
+            self.root.winfo_x() + (self.root.winfo_width() // 2) - 225,
+            self.root.winfo_y() + (self.root.winfo_height() // 2) - 100
+        ))
+        
+        # Icon based on message type
+        icon_map = {
+            "info": "ℹ️",
+            "success": "✅", 
+            "warning": "⚠️",
+            "error": "❌"
+        }
+        icon = icon_map.get(message_type, "ℹ️")
+        
+        # Title with icon
+        title_frame = tk.Frame(message_dialog, bg=self.DOS_BG)
+        title_frame.pack(fill=tk.X, padx=20, pady=(20, 10))
+        
+        title_label = tk.Label(
+            title_frame,
+            text=f"{icon} {title.upper()}",
+            font=self.DOS_FONT_BOLD,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG
+        )
+        title_label.pack()
+        
+        # Message text
+        message_frame = tk.Frame(message_dialog, bg=self.DOS_BG)
+        message_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=(0, 20))
+        
+        message_label = tk.Label(
+            message_frame,
+            text=message,
+            font=self.DOS_FONT,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG_DIM,
+            wraplength=380,
+            justify=tk.LEFT
+        )
+        message_label.pack()
+        
+        # OK button
+        button_frame = tk.Frame(message_dialog, bg=self.DOS_BG)
+        button_frame.pack(fill=tk.X, padx=20, pady=(0, 20))
+        
+        ok_button = tk.Button(
+            button_frame,
+            text="[ OK ]",
+            command=message_dialog.destroy,
+            font=self.DOS_FONT_BOLD,
+            bg=self.DOS_BG,
+            fg=self.DOS_FG,
+            activebackground=self.DOS_FG,
+            activeforeground=self.DOS_BG,
+            relief=tk.RAISED,
+            bd=3,
+            highlightthickness=1,
+            highlightbackground=self.DOS_FG,
+            width=10
+        )
+        ok_button.pack()
+        
+        # Handle Enter key
+        message_dialog.bind('<Return>', lambda e: message_dialog.destroy())
+        message_dialog.bind('<Escape>', lambda e: message_dialog.destroy())
+        
+        # Focus on OK button
+        ok_button.focus_set()
+        
+        # Wait for dialog to close
+        self.root.wait_window(message_dialog)
