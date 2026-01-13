@@ -40,7 +40,7 @@ class TransmuteApp:
     def __init__(self, root):
         self.root = root
         self.root.title("🏢 Weyland-Yutani Transmute Tool")
-        self.root.geometry("1200x950")  # Increased width to ensure audio controls fit
+        self.root.geometry("1400x950")  # Increased width to ensure audio controls fit
         self.root.configure(bg=self.DOS_BG)
         
         # Initialize debug window
@@ -84,6 +84,15 @@ class TransmuteApp:
         self.root.update()  # Force UI update to ensure all widgets are displayed
         self._redirect_console()
         self._setup_keyboard_shortcuts()
+        
+        # Start background music if audio is enabled
+        if self.audio_enabled and not self.audio_muted:
+            try:
+                pygame.mixer.music.play(-1)  # -1 means loop indefinitely
+                self.audio_playing = True
+                self.debug_window.log_info("Background music started")
+            except Exception as e:
+                self.debug_window.log_error(f"Failed to start background music: {e}")
         
         # Set up window close handler
         self.root.protocol("WM_DELETE_WINDOW", self._on_window_close)

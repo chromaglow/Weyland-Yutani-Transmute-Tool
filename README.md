@@ -19,22 +19,41 @@ Fixes STL files that appear solid but slice as hollow shells:
 
 ## ⚡ Quick Start
 
-### Installation
+### 🚀 Easy Installation (Recommended for Everyone!)
 
-**Python 3.14 Users** (you!): Use complete installation
-
-```bash
-# Install trimesh and scipy for full functionality
-python -m pip install trimesh scipy
-
-# OR double-click:
-install_minimal.bat
+**Just double-click these files in the root folder:**
+```
+install_minimal.bat    <- Click this first to install everything
+run_app.bat           <- Click this to run the app after installation
 ```
 
-**Python 3.12 or earlier**: Full installation
+That's it! The installer will:
+- ✅ Check if Python is installed
+- ✅ Install all required packages automatically
+- ✅ Set up audio features and mesh processing
+- ✅ Guide you through any issues
+- ✅ Tell you when everything is ready
+
+**No technical knowledge required!** Perfect for sharing with friends.
+
+### Alternative: Scripts Folder Installation
+
+If you prefer the original location:
+```
+scripts/install_minimal.bat
+scripts/run_app.bat
+```
+
+### Manual Installation (For Advanced Users)
+
+If you prefer manual installation:
 
 ```bash
+# Install all dependencies
 pip install -r requirements.txt
+
+# Or install core packages only
+pip install trimesh scipy networkx fast-simplification pygame
 ```
 
 ### Running the Application
@@ -49,34 +68,71 @@ python src/main.py
 
 ---
 
-## 🖥️ Usage
+## 🎵 Features
 
-1. **Load STL File** - Click "📁 Load STL" and select your file
-2. **Analyze Mesh** - Click "🔍 Analyze" to detect issues
-3. **Repair Mesh** - Click "🔧 Repair" to fix defects automatically
-4. **Export Files** - Click "💾 Export" to save repaired STL and/or STEP
+- **DOS-Themed Interface** - Authentic retro green-on-black design
+- **Background Music** - Immersive audio experience with volume control
+- **Mesh Analysis** - Detect holes, inverted normals, and defects
+- **Auto Repair** - Fix watertight geometry automatically
+- **Smart Simplification** - Reduce complexity while preserving quality
+- **STEP Export** - Convert to solid CAD formats (requires FreeCAD)
+- **Progress Feedback** - Visual progress bars and status updates
+- **Professional Logging** - Debug window for troubleshooting
 
 ---
 
-## 📋 Requirements
+## 📋 System Requirements
 
 ### Required
-- Python 3.8+
-- trimesh (includes numpy)
-- scipy (for complete mesh repair algorithms)
+- **Python 3.8+** (3.13 recommended)
+- **Windows 10/11** (Linux/Mac may work but not tested)
 
 ### Optional
-- FreeCAD (for STEP export to SolidWorks)
-- pytest (for testing)
-- networkx (additional graph operations)
+- **FreeCAD** - For STEP file export to CAD software
+- **Audio device** - For background music (auto-disables if unavailable)
 
 ---
 
-## ⚠️ Python 3.14 Note
+## 🖥️ How to Use
 
-You're using Python 3.14 (very new!). Some packages don't have pre-built wheels yet.
+1. **Install** - Double-click `install_minimal.bat` in the root folder
+2. **Launch** - Double-click `run_app.bat` in the root folder
+3. **Load** - Click "📁 Load STL" and select your 3D file
+4. **Analyze** - Click "🔍 Analyze" to check for issues
+5. **Repair** - Click "🔧 Repair" to fix problems automatically
+6. **Simplify** - Use sliders or buttons to reduce mesh complexity
+7. **Export** - Save as repaired STL and/or STEP file
 
-**Solution**: Install just trimesh
+---
+
+## 🎮 Interface Guide
+
+- **Volume Control** - Top-right slider and mute button
+- **Progress Dialogs** - 3.5-second animated feedback for all actions
+- **DOS Aesthetics** - Green text on black background throughout
+- **Keyboard Shortcuts** - Ctrl+D for debug window
+- **Status Updates** - Real-time feedback in bottom console
+
+---
+
+## 🔧 Troubleshooting
+
+**Installation Issues:**
+- Run `scripts/install_minimal.bat` as Administrator
+- Check that Python is in your PATH
+- Restart command prompt after Python installation
+
+**Audio Not Working:**
+- Audio features automatically disable if pygame fails
+- App works perfectly without sound
+
+**STEP Export Issues:**
+- Install FreeCAD from freecad.org
+- STL export always works regardless
+
+**Performance:**
+- Large meshes may take time to process
+- Use simplification features to speed up operations
 ```bash
 python -m pip install trimesh
 ```
